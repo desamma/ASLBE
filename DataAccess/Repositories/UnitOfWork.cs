@@ -1,0 +1,30 @@
+﻿using BussinessObjects.Models;
+using DataAccess.IRepositories;
+
+namespace DataAccess.Repositories
+{
+    public class UnitOfWork : IUnitOfWork, IDisposable
+    {
+        private readonly ApplicationDbContext _context;
+
+        public IGenericRepository<User> Users { get; }
+        public IGenericRepository<Item> Items { get; }
+        public IGenericRepository<GameNews> GameNews { get; }
+        public IUserItemRepository UserItems { get; }
+
+        public UnitOfWork(ApplicationDbContext context)
+        {
+            _context = context;
+
+            Users = new GenericRepository<User>(_context);
+            Items = new GenericRepository<Item>(_context);
+            GameNews = new GenericRepository<GameNews>(_context);
+            UserItems = new UserItemRepository(_context);
+        }
+
+        public void Dispose()
+        {
+            _context.Dispose();
+        }
+    }
+}
