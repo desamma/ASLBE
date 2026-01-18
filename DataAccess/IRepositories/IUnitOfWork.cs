@@ -4,9 +4,9 @@ namespace DataAccess.IRepositories
 {
     public interface IUnitOfWork
     {
-        IGenericRepository<User> Users { get; }
-        IGenericRepository<Item> Items { get; }
-        IGenericRepository<GameNews> GameNews { get; }
+        IUserRepository Users { get; }
+        IItemRepository Items { get; }
+        IGameNewsRepository GameNews { get; }
         IUserItemRepository UserItems { get; }
     }
 }

@@ -7,18 +7,18 @@ namespace DataAccess.Repositories
     {
         private readonly ApplicationDbContext _context;
 
-        public IGenericRepository<User> Users { get; }
-        public IGenericRepository<Item> Items { get; }
-        public IGenericRepository<GameNews> GameNews { get; }
+        public IUserRepository Users { get; }
+        public IItemRepository Items { get; }
+        public IGameNewsRepository GameNews { get; }
         public IUserItemRepository UserItems { get; }
 
         public UnitOfWork(ApplicationDbContext context)
         {
             _context = context;
 
-            Users = new GenericRepository<User>(_context);
-            Items = new GenericRepository<Item>(_context);
-            GameNews = new GenericRepository<GameNews>(_context);
+            Users = new UserRepository(_context);
+            Items = new ItemRepository(_context);
+            GameNews = new GameNewsRepository(_context);
             UserItems = new UserItemRepository(_context);
         }
 
