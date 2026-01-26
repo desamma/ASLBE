@@ -9,6 +9,7 @@ namespace DataAccess.Repositories
 
         public IGenericRepository<User> Users { get; }
         public IGenericRepository<Item> Items { get; }
+        public IGenericRepository<Transaction> Transactions { get; }
         public IGenericRepository<GameNews> GameNews { get; }
         public IUserItemRepository UserItems { get; }
 
@@ -18,6 +19,7 @@ namespace DataAccess.Repositories
 
             Users = new GenericRepository<User>(_context);
             Items = new GenericRepository<Item>(_context);
+            Transactions = new GenericRepository<Transaction>(_context);
             GameNews = new GenericRepository<GameNews>(_context);
             UserItems = new UserItemRepository(_context);
         }
