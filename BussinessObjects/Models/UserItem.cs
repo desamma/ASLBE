@@ -1,14 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BussinessObjects.Models
 {
     public class UserItem
     {
         public Guid UserId { get; set; }
-        public User User { get; set; }
+        [ValidateNever]
+        public virtual User User { get; set; }
 
         public Guid ItemId { get; set; }
-        public Item Item { get; set; }
+        [ValidateNever]
+        public virtual Item Item { get; set; }
 
         [Required]
         [Range(0, int.MaxValue)]
