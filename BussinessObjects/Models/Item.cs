@@ -4,7 +4,7 @@ namespace BussinessObjects.Models
 {
     public class Item
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         [MaxLength(50)]
         [Required]
