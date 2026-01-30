@@ -3,14 +3,22 @@ using BussinessObjects.Models;
 using DataAccess;
 using DataAccess.IRepositories;
 using DataAccess.Repositories;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Services.IServices;
+using Services.Services;
 using System.Text;
+using System.Text.Json;
 using Utilities;
+
+// Load .env file
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,10 +69,23 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddRouting(options =>
+{
+    options.LowercaseUrls = true;
+});
+
 //Repo
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IGameNewsRepository, GameNewsRepository>();
 builder.Services.AddScoped<IUserItemRepository, UserItemRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+//Services
+builder.Services.AddScoped<IGachaService, GachaService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
 
 //Configure .env config binding
 builder.Configuration["EmailSettings:FromEmail"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMEMAIL");
@@ -75,9 +96,13 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Configuration["CloudinarySetting:CloudinaryUrl"] = Environment.GetEnvironmentVariable("CLOUDINARY_URL");
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySetting"));
 
-
 // Add services to the container.
 builder.Services.AddControllers()
+    // who tf want api/Auth instead of api/auth
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    })
     .AddOData(options =>
     {
         options
@@ -90,6 +115,11 @@ builder.Services.AddControllers()
             .SetMaxTop(100);
     });
 
+// who tf want api/Auth instead of api/auth
+builder.Services.AddRouting(options =>
+{
+    options.LowercaseUrls = true;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
