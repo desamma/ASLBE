@@ -85,6 +85,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 //Services
 builder.Services.AddScoped<IGachaService, GachaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IGameNewsService, GameNewsService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 
 //Configure .env config binding

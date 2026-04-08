@@ -24,9 +24,17 @@ namespace DataAccess.Repositories
             UserItems = new UserItemRepository(_context);
         }
 
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
         public void Dispose()
         {
             _context.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }
+
+
