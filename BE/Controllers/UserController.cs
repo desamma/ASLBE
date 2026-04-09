@@ -36,23 +36,7 @@ namespace BE.Controllers
             return Ok(new { message = result.Message, data = result.Data });
         }
 
-        [HttpPost]
-        [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _userService.CreateAsync(request);
-
-            if (!result.Success)
-                return BadRequest(new { message = result.Message, errors = result.Errors });
-
-            return Created(nameof(GetById), new { message = result.Message, data = result.Data });
-        }
-
         [HttpPut("{id}")]
-        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserRequest request)
         {
             if (!ModelState.IsValid)
@@ -66,11 +50,11 @@ namespace BE.Controllers
             return Ok(new { message = result.Message, data = result.Data });
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("{id}/disable")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Disable(Guid id)
         {
-            var result = await _userService.DeleteAsync(id);
+            var result = await _userService.DisableAsync(id);
 
             if (!result.Success)
                 return BadRequest(new { message = result.Message });

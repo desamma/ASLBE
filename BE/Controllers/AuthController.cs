@@ -73,7 +73,10 @@ namespace BE.Controllers
                 UserId = result.Data.UserId,
                 UserName = result.Data.UserName,
                 Email = result.Data.Email,
-                Roles = result.Data.Roles
+                Roles = result.Data.Roles,
+                Avatar = result.Data.Avatar,
+                CurrencyAmount = result.Data.CurrencyAmount,
+                Gender = result.Data.Gender
             });
         }
     }
@@ -99,5 +102,8 @@ namespace BE.Controllers
         public string UserName { get; set; }
         public string Email { get; set; }
         public string[] Roles { get; set; }
+        public string Avatar { get; set; }
+        public decimal CurrencyAmount { get; set; }
+        public int Gender { get; set; }
     }
 }
