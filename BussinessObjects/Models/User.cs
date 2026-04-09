@@ -30,14 +30,22 @@ namespace BussinessObjects.Models
         [DataType(DataType.DateTime)]
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? CreatedDate { get; set; } = DateTime.Now;
-        
-        [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "Currency must be a positive number.")]
-        public decimal CurrencyAmount { get; set; }
 
         public bool IsBanned { get; set; }
 
+        // --- CÁC TRƯỜNG BỔ SUNG THEO ERD ---
+
+        [Display(Name = "Currency Amount")]
+        public decimal CurrencyAmount { get; set; }
+
+        [Display(Name = "Pity Counter")]
+        public int PityCounter { get; set; }
+
+
         public ICollection<UserItem> UserItems { get; set; } = new List<UserItem>();
+
+        public ICollection<GachaHistory> GachaHistories { get; set; } = new List<GachaHistory>();
+
         public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     }
 }
