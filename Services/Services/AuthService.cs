@@ -177,7 +177,10 @@ namespace Services.Services
                     UserId = user.Id,
                     UserName = user.UserName,
                     Email = user.Email,
-                    Roles = roles.ToArray()
+                    Roles = roles.ToArray(),
+                    Avatar = user.UserAvatar ?? "",
+                    CurrencyAmount = user.CurrencyAmount,
+                    Gender = user.Gender
                 }
             };
         }
@@ -198,7 +201,9 @@ namespace Services.Services
                 new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new(ClaimTypes.Name, user.UserName ?? string.Empty),
                 new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new("Avatar", user.UserAvatar ?? ""),
+                new("CurrencyAmount", user.CurrencyAmount.ToString("F2"))
             };
 
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));

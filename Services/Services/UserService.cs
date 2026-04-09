@@ -116,89 +116,6 @@ namespace Services.Services
             }
         }
 
-        public async Task<ServiceResult<UserDto>> CreateAsync(CreateUserRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.UserName) || 
-                    string.IsNullOrWhiteSpace(request.Email) ||
-                    string.IsNullOrWhiteSpace(request.Password))
-                {
-                    return new ServiceResult<UserDto>
-                    {
-                        Success = false,
-                        Message = "Username, Email, and Password are required",
-                        Errors = ["Username, Email, and Password cannot be empty"]
-                    };
-                }
-
-                var existingUser = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.UserName == request.UserName);
-                if (existingUser != null)
-                    return new ServiceResult<UserDto>
-                    {
-                        Success = false,
-                        Message = "A user with this username already exists"
-                    };
-
-                var user = new User
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = request.UserName,
-                    Email = request.Email,
-                    PhoneNumber = request.PhoneNumber,
-                    UserDOB = request.UserDOB,
-                    Gender = request.Gender,
-                    UserAvatar = request.UserAvatar,
-                    CreatedDate = DateTime.Now,
-                    IsBanned = false,
-                    CurrencyAmount = 0,
-                    PityCounter = 0
-                };
-
-                var result = await _userManager.CreateAsync(user, request.Password);
-                if (!result.Succeeded)
-                    return new ServiceResult<UserDto>
-                    {
-                        Success = false,
-                        Message = "Error creating user",
-                        Errors = result.Errors.Select(e => e.Description).ToList()
-                    };
-
-                await _unitOfWork.SaveChangesAsync();
-
-                var dto = new UserDto
-                {
-                    Id = user.Id,
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    PhoneNumber = user.PhoneNumber,
-                    UserDOB = user.UserDOB,
-                    Gender = user.Gender,
-                    UserAvatar = user.UserAvatar,
-                    CreatedDate = user.CreatedDate,
-                    IsBanned = user.IsBanned,
-                    CurrencyAmount = user.CurrencyAmount,
-                    PityCounter = user.PityCounter
-                };
-
-                return new ServiceResult<UserDto>
-                {
-                    Success = true,
-                    Message = "User created successfully",
-                    Data = dto
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ServiceResult<UserDto>
-                {
-                    Success = false,
-                    Message = "Error creating user",
-                    Errors = [ex.Message]
-                };
-            }
-        }
-
         public async Task<ServiceResult<UserDto>> UpdateAsync(Guid id, UpdateUserRequest request)
         {
             try
@@ -287,7 +204,7 @@ namespace Services.Services
             }
         }
 
-        public async Task<ServiceResult<bool>> DeleteAsync(Guid id)
+        public async Task<ServiceResult<bool>> DisableAsync(Guid id)
         {
             try
             {
@@ -306,13 +223,14 @@ namespace Services.Services
                         Message = "User not found"
                     };
 
-                await _unitOfWork.Users.DeleteAsync(user);
+                user.IsBanned = true;
+                await _unitOfWork.Users.UpdateAsync(user);
                 await _unitOfWork.SaveChangesAsync();
 
                 return new ServiceResult<bool>
                 {
                     Success = true,
-                    Message = "User deleted successfully",
+                    Message = "User disabled successfully",
                     Data = true
                 };
             }
@@ -321,7 +239,7 @@ namespace Services.Services
                 return new ServiceResult<bool>
                 {
                     Success = false,
-                    Message = "Error deleting user",
+                    Message = "Error disabling user",
                     Errors = [ex.Message]
                 };
             }

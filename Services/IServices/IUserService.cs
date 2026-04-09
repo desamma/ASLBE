@@ -4,9 +4,8 @@ namespace Services.IServices
     {
         ServiceResult<List<UserDto>> GetAll();
         Task<ServiceResult<UserDto>> GetByIdAsync(Guid id);
-        Task<ServiceResult<UserDto>> CreateAsync(CreateUserRequest request);
         Task<ServiceResult<UserDto>> UpdateAsync(Guid id, UpdateUserRequest request);
-        Task<ServiceResult<bool>> DeleteAsync(Guid id);
+        Task<ServiceResult<bool>> DisableAsync(Guid id);
     }
 
     public class UserDto
