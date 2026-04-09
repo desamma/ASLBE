@@ -1,24 +1,30 @@
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BussinessObjects.Models;
-
-public class Transaction
+namespace BussinessObjects.Models
 {
-    public Guid Id { get; set; }
-    
-    [Required]
-    public long OrderCode { get; set; }
-    
-    [Required]
-    [Range(0, double.MaxValue, ErrorMessage = "Currency must be a positive number.")]
-    public decimal CurrencyAmount { get; set; }
-    
-    [DataType(DataType.DateTime)]
-    [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
-    public DateTime? TransactionDate { get; set; } = DateTime.Now;
-    
-    public Guid UserId { get; set; }
-    [ValidateNever]
-    public virtual User User { get; set; }
+    public class Transaction
+    {
+        public Guid Id { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? Description { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string Type { get; set; } = string.Empty;
+
+        [MaxLength(50)]
+        public string? Rarity { get; set; }
+
+        public string? ImagePath { get; set; }
+
+        // Khóa ngoại tới User
+        [Required]
+        public Guid UserId { get; set; }
+        public User? User { get; set; }
+    }
 }
