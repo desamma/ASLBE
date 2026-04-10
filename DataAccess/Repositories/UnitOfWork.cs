@@ -12,6 +12,7 @@ namespace DataAccess.Repositories
         public IGenericRepository<Transaction> Transactions { get; }
         public IGenericRepository<GameNews> GameNews { get; }
         public IUserItemRepository UserItems { get; }
+        public IShopItemRepository ShopItems { get; }
 
         public UnitOfWork(ApplicationDbContext context)
         {
@@ -22,6 +23,7 @@ namespace DataAccess.Repositories
             Transactions = new GenericRepository<Transaction>(_context);
             GameNews = new GenericRepository<GameNews>(_context);
             UserItems = new UserItemRepository(_context);
+            ShopItems = new ShopItemRepository(_context);
         }
 
         public async Task SaveChangesAsync()
