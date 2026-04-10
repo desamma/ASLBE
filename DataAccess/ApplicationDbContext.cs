@@ -18,6 +18,8 @@ namespace DataAccess
         public virtual DbSet<GachaBanner> GachaBanners { get; set; }
         public virtual DbSet<GachaItem> GachaItems { get; set; }
         public virtual DbSet<GachaHistory> GachaHistories { get; set; }
+        public virtual DbSet<ShopItem> ShopItems { get; set; }
+        public virtual DbSet<ShopPurchase> ShopPurchases { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -42,6 +44,8 @@ namespace DataAccess
             modelBuilder.Entity<GachaBanner>().HasKey(gb => gb.Id);
             modelBuilder.Entity<GachaItem>().HasKey(gi => gi.Id);
             modelBuilder.Entity<GachaHistory>().HasKey(gh => gh.Id);
+            modelBuilder.Entity<ShopItem>().HasKey(si => si.Id);
+            modelBuilder.Entity<ShopPurchase>().HasKey(sp => sp.Id);
 
             //Table names
             modelBuilder.Entity<GachaBanner>().ToTable("GachaBanner");
@@ -98,6 +102,27 @@ namespace DataAccess
                 .HasForeignKey(gh => gh.GachaItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            //User - ShopPurchase
+            modelBuilder.Entity<ShopPurchase>()
+                .HasOne(sp => sp.User)
+                .WithMany(u => u.ShopPurchases)
+                .HasForeignKey(sp => sp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            //ShopItem - ShopPurchase
+            modelBuilder.Entity<ShopPurchase>()
+                .HasOne(sp => sp.ShopItem)
+                .WithMany(si => si.ShopPurchases)
+                .HasForeignKey(sp => sp.ShopItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            //Item - ShopItem
+            modelBuilder.Entity<ShopItem>()
+                .HasOne(si => si.Item)
+                .WithMany()
+                .HasForeignKey(si => si.ItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             //Column types
             modelBuilder.Entity<GachaHistory>()
                 .Property(gh => gh.NewUserBalance)
@@ -105,6 +130,19 @@ namespace DataAccess
 
             modelBuilder.Entity<User>()
                 .Property(u => u.CurrencyAmount)
+                .HasColumnType("decimal(18,2)");
+
+            //Column types for ShopItem and ShopPurchase
+            modelBuilder.Entity<ShopItem>()
+                .Property(si => si.Price)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<ShopItem>()
+                .Property(si => si.CurrencyAmount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<ShopPurchase>()
+                .Property(sp => sp.AmountPaid)
                 .HasColumnType("decimal(18,2)");
         }
     }
