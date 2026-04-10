@@ -14,7 +14,7 @@ namespace BussinessObjects.Models
 
         [MaxLength(500)]
         [Required]
-        public string? Description { get; set; }
+        public string Description { get; set; }
 
         public string? Rarity { get; set; }
 

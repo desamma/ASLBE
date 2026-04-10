@@ -86,6 +86,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IGachaService, GachaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IGameNewsService, GameNewsService>();
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<IShopItemService, ShopItemService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 
