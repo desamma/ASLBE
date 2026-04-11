@@ -39,6 +39,7 @@ namespace Services.Services
                     UserDOB = u.UserDOB,
                     Gender = u.Gender,
                     UserAvatar = u.UserAvatar,
+                    SaveFilePath = u.SaveFilePath,
                     CreatedDate = u.CreatedDate,
                     IsBanned = u.IsBanned,
                     CurrencyAmount = u.CurrencyAmount,
@@ -92,6 +93,7 @@ namespace Services.Services
                     UserDOB = user.UserDOB,
                     Gender = user.Gender,
                     UserAvatar = user.UserAvatar,
+                    SaveFilePath = user.SaveFilePath,
                     CreatedDate = user.CreatedDate,
                     IsBanned = user.IsBanned,
                     CurrencyAmount = user.CurrencyAmount,
@@ -164,6 +166,7 @@ namespace Services.Services
                 user.UserDOB = request.UserDOB;
                 user.Gender = request.Gender;
                 user.UserAvatar = request.UserAvatar;
+                user.SaveFilePath = request.SaveFilePath;
                 user.IsBanned = request.IsBanned;
                 user.CurrencyAmount = request.CurrencyAmount;
                 user.PityCounter = request.PityCounter;
@@ -180,6 +183,7 @@ namespace Services.Services
                     UserDOB = user.UserDOB,
                     Gender = user.Gender,
                     UserAvatar = user.UserAvatar,
+                    SaveFilePath = user.SaveFilePath,
                     CreatedDate = user.CreatedDate,
                     IsBanned = user.IsBanned,
                     CurrencyAmount = user.CurrencyAmount,
