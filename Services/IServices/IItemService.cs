@@ -1,3 +1,5 @@
+using Services;
+
 namespace Services.IServices
 {
     public interface IItemService
@@ -17,6 +19,7 @@ namespace Services.IServices
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public List<string> StatsLines { get; set; } = new List<string>();
     }
 
     public class CreateItemRequest
@@ -26,6 +29,7 @@ namespace Services.IServices
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public List<string> StatsLines { get; set; } = new List<string>();
     }
 
     public class UpdateItemRequest
@@ -35,5 +39,6 @@ namespace Services.IServices
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public List<string> StatsLines { get; set; } = new List<string>();
     }
 }

@@ -103,6 +103,7 @@ builder.Services.AddScoped<IGameNewsService, GameNewsService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IShopItemService, ShopItemService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserItemService, UserItemService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
