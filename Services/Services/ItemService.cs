@@ -34,7 +34,8 @@ namespace Services.Services
                     Description = i.Description,
                     Type = i.Type,
                     Rarity = i.Rarity,
-                    ImagePath = i.ImagePath
+                    ImagePath = i.ImagePath,
+                    StatsLines = i.StatsLines
                 }).ToList();
 
                 return new ServiceResult<List<ItemDto>>
@@ -82,7 +83,8 @@ namespace Services.Services
                     Description = item.Description,
                     Type = item.Type,
                     Rarity = item.Rarity,
-                    ImagePath = item.ImagePath
+                    ImagePath = item.ImagePath,
+                    StatsLines = item.StatsLines
                 };
 
                 return new ServiceResult<ItemDto>
@@ -136,7 +138,8 @@ namespace Services.Services
                     Description = request.Description,
                     Type = request.Type,
                     Rarity = request.Rarity,
-                    ImagePath = request.ImagePath
+                    ImagePath = request.ImagePath,
+                    StatsLines = request.StatsLines ?? new List<string>()
                 };
 
                 await _unitOfWork.Items.AddAsync(item);
@@ -149,7 +152,8 @@ namespace Services.Services
                     Description = item.Description,
                     Type = item.Type,
                     Rarity = item.Rarity,
-                    ImagePath = item.ImagePath
+                    ImagePath = item.ImagePath,
+                    StatsLines = item.StatsLines
                 };
 
                 return new ServiceResult<ItemDto>
@@ -220,6 +224,7 @@ namespace Services.Services
                 item.Type = request.Type;
                 item.Rarity = request.Rarity;
                 item.ImagePath = request.ImagePath;
+                item.StatsLines = request.StatsLines ?? new List<string>();
 
                 await _unitOfWork.Items.UpdateAsync(item);
                 await _unitOfWork.SaveChangesAsync();
@@ -231,7 +236,8 @@ namespace Services.Services
                     Description = item.Description,
                     Type = item.Type,
                     Rarity = item.Rarity,
-                    ImagePath = item.ImagePath
+                    ImagePath = item.ImagePath,
+                    StatsLines = item.StatsLines
                 };
 
                 return new ServiceResult<ItemDto>
