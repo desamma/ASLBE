@@ -1,3 +1,5 @@
+using Services;
+
 namespace Services.IServices
 {
     public interface IShopItemService
