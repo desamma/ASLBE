@@ -1,4 +1,6 @@
-﻿namespace Services.IServices
+﻿using Services;
+
+namespace Services.IServices
 {
     public interface IGameNewsService
     {
@@ -32,13 +34,5 @@
         public string BannerPath { get; set; }
         public string Description { get; set; }
         public string Content { get; set; }
-    }
-
-    public class ServiceResult<T>
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; }
-        public T Data { get; set; }
-        public IEnumerable<string> Errors { get; set; }
     }
 }
