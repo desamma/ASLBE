@@ -16,6 +16,10 @@ using Services.Services;
 using System.Text;
 using System.Text.Json;
 using Utilities;
+using PayOS;
+using PayOS.Models;
+using PayOS.Models.V2.PaymentRequests;
+using PayOS.Models.Webhooks;
 
 // Load .env file
 Env.Load();
@@ -40,6 +44,16 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+builder.Services.AddSingleton<PayOSClient>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    string clientId = config["PayOS:ClientId"] ?? throw new InvalidOperationException("PayOS:ClientId missing");
+    string apiKey = config["PayOS:ApiKey"] ?? throw new InvalidOperationException("PayOS:ApiKey missing");
+    string checksumKey = config["PayOS:ChecksumKey"] ?? throw new InvalidOperationException("PayOS:ChecksumKey missing");
+
+    return new PayOSClient(clientId, apiKey, checksumKey);
+});
 
 //JWT
 builder.Services.AddAuthentication(options =>
@@ -90,6 +104,7 @@ builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IShopItemService, ShopItemService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 //Configure .env config binding
 builder.Configuration["EmailSettings:FromEmail"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMEMAIL");
@@ -102,7 +117,6 @@ builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(
 
 // Add services to the container.
 builder.Services.AddControllers()
-    // who tf want api/Auth instead of api/auth
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -119,7 +133,6 @@ builder.Services.AddControllers()
             .SetMaxTop(100);
     });
 
-// who tf want api/Auth instead of api/auth
 builder.Services.AddRouting(options =>
 {
     options.LowercaseUrls = true;
