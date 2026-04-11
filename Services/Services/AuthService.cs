@@ -187,9 +187,9 @@ namespace Services.Services
 
         private async Task<string> GenerateJwtTokenAsync(User user)
         {
-            var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["JwtSettings:Key"];
-            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _configuration["JwtSettings:Issuer"];
-            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _configuration["JwtSettings:Audience"];
+            var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["JwtSettings:Key"] ?? "MotChuoiKiTuRatDaiVaBaoMatChoJWT123!@#";
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _configuration["JwtSettings:Issuer"] ?? "MyLocalServer";
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _configuration["JwtSettings:Audience"] ?? "MyLocalClient";
 
             if (string.IsNullOrEmpty(key))
                 throw new InvalidOperationException("JWT_KEY is not configured");
@@ -197,14 +197,14 @@ namespace Services.Services
             var roles = await _userManager.GetRolesAsync(user);
 
             var claims = new List<Claim>
-            {
-                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new(ClaimTypes.Name, user.UserName ?? string.Empty),
-                new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new("Avatar", user.UserAvatar ?? ""),
-                new("CurrencyAmount", user.CurrencyAmount.ToString("F2"))
-            };
+    {
+        new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new(ClaimTypes.Name, user.UserName ?? string.Empty),
+        new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new("Avatar", user.UserAvatar ?? ""),
+        new("CurrencyAmount", user.CurrencyAmount.ToString("F2"))
+    };
 
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
