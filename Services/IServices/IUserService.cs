@@ -19,6 +19,7 @@ namespace Services.IServices
         public DateOnly? UserDOB { get; set; }
         public byte Gender { get; set; }
         public string UserAvatar { get; set; }
+        public string SaveFilePath { get; set; }
         public DateTime? CreatedDate { get; set; }
         public bool IsBanned { get; set; }
         public decimal CurrencyAmount { get; set; }
@@ -34,6 +35,7 @@ namespace Services.IServices
         public DateOnly? UserDOB { get; set; }
         public byte Gender { get; set; }
         public string UserAvatar { get; set; }
+        public string SaveFilePath { get; set; }
     }
 
     public class UpdateUserRequest
@@ -44,6 +46,7 @@ namespace Services.IServices
         public DateOnly? UserDOB { get; set; }
         public byte Gender { get; set; }
         public string UserAvatar { get; set; }
+        public string SaveFilePath { get; set; }
         public bool IsBanned { get; set; }
         public decimal CurrencyAmount { get; set; }
         public int PityCounter { get; set; }
