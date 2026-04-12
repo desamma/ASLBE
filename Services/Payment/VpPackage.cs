@@ -11,7 +11,7 @@ namespace Services.Payment
         public int Vp { get; set; }          // VP base
         public int BonusVp { get; set; }     // VP bonus
         public int TotalVp => Vp + BonusVp;
-        public decimal PriceVnd { get; set; }
+        public int PriceVnd { get; set; }
         public string DisplayName { get; set; } = string.Empty;
     }
 }
