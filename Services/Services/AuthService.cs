@@ -197,14 +197,14 @@ namespace Services.Services
             var roles = await _userManager.GetRolesAsync(user);
 
             var claims = new List<Claim>
-    {
-        new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        new(ClaimTypes.Name, user.UserName ?? string.Empty),
-        new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new("Avatar", user.UserAvatar ?? ""),
-        new("CurrencyAmount", user.CurrencyAmount.ToString("F2"))
-    };
+            {
+                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new(ClaimTypes.Name, user.UserName ?? string.Empty),
+                new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new("Avatar", user.UserAvatar ?? ""),
+                new("CurrencyAmount", user.CurrencyAmount.ToString("F2"))
+            };
 
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
