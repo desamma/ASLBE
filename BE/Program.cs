@@ -3,14 +3,26 @@ using BussinessObjects.Models;
 using DataAccess;
 using DataAccess.IRepositories;
 using DataAccess.Repositories;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Services.IServices;
+using Services.Services;
 using System.Text;
+using System.Text.Json;
 using Utilities;
+using PayOS;
+using PayOS.Models;
+using PayOS.Models.V2.PaymentRequests;
+using PayOS.Models.Webhooks;
+
+// Load .env file
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +45,16 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddSingleton<PayOSClient>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    string clientId = config["PayOS:ClientId"] ?? throw new InvalidOperationException("PayOS:ClientId missing");
+    string apiKey = config["PayOS:ApiKey"] ?? throw new InvalidOperationException("PayOS:ApiKey missing");
+    string checksumKey = config["PayOS:ChecksumKey"] ?? throw new InvalidOperationException("PayOS:ChecksumKey missing");
+
+    return new PayOSClient(clientId, apiKey, checksumKey);
+});
+
 //JWT
 builder.Services.AddAuthentication(options =>
 {
@@ -50,21 +72,44 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
         ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")))
+            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? string.Empty))
     };
-})
+});
+
+/*
 .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
 {
     options.ClientId = Environment.GetEnvironmentVariable("GOOGLESETTINGS_CLIENTID")!;
     options.ClientSecret = Environment.GetEnvironmentVariable("GOOGLESETTINGS_CLIENTSECRET")!;
 });
+*/
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddRouting(options =>
+{
+    options.LowercaseUrls = true;
+});
+
 //Repo
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IGameNewsRepository, GameNewsRepository>();
 builder.Services.AddScoped<IUserItemRepository, UserItemRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+//Services
+builder.Services.AddScoped<IGachaService, GachaService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IGameNewsService, GameNewsService>();
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<IShopItemService, ShopItemService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserItemService, UserItemService>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<INPCService, NPCService>();
 
 //Configure .env config binding
 builder.Configuration["EmailSettings:FromEmail"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMEMAIL");
@@ -75,9 +120,12 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Configuration["CloudinarySetting:CloudinaryUrl"] = Environment.GetEnvironmentVariable("CLOUDINARY_URL");
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySetting"));
 
-
 // Add services to the container.
 builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    })
     .AddOData(options =>
     {
         options
@@ -90,6 +138,10 @@ builder.Services.AddControllers()
             .SetMaxTop(100);
     });
 
+builder.Services.AddRouting(options =>
+{
+    options.LowercaseUrls = true;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -8,7 +8,7 @@ namespace BussinessObjects.Models
     {
         [MaxLength(50)]
         [Required]
-        public override string UserName { get; set; }
+        public override string? UserName { get; set; }
 
         [DataType(DataType.Date)]
         [Display(Name = "Date of Birth")]
@@ -27,17 +27,30 @@ namespace BussinessObjects.Models
         [ValidateNever]
         public string? UserAvatar { get; set; }
 
+        [ValidateNever]
+        public string? SaveFilePath { get; set; }
+
         [DataType(DataType.DateTime)]
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? CreatedDate { get; set; } = DateTime.Now;
-        
-        [Required]
-        [Range(0, double.MaxValue, ErrorMessage = "Currency must be a positive number.")]
-        public decimal CurrencyAmount { get; set; }
 
         public bool IsBanned { get; set; }
 
+        // --- CÁC TRƯỜNG BỔ SUNG THEO ERD ---
+
+        [Display(Name = "Currency Amount")]
+        public int CurrencyAmount { get; set; }
+
+        [Display(Name = "Pity Counter")]
+        public int PityCounter { get; set; }
+
+
         public ICollection<UserItem> UserItems { get; set; } = new List<UserItem>();
+
+        public ICollection<GachaHistory> GachaHistories { get; set; } = new List<GachaHistory>();
+
         public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+        public ICollection<ShopPurchase> ShopPurchases { get; set; } = new List<ShopPurchase>();
     }
 }
