@@ -187,9 +187,9 @@ namespace Services.Services
 
         private async Task<string> GenerateJwtTokenAsync(User user)
         {
-            var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["JwtSettings:Key"] ?? "MotChuoiKiTuRatDaiVaBaoMatChoJWT123!@#";
-            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _configuration["JwtSettings:Issuer"] ?? "MyLocalServer";
-            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _configuration["JwtSettings:Audience"] ?? "MyLocalClient";
+            var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["JwtSettings:Key"];
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _configuration["JwtSettings:Issuer"];
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _configuration["JwtSettings:Audience"];
 
             if (string.IsNullOrEmpty(key))
                 throw new InvalidOperationException("JWT_KEY is not configured");
