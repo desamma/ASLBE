@@ -10,6 +10,7 @@ namespace DataAccess.IRepositories
         IGenericRepository<Transaction> Transactions { get; }
         IUserItemRepository UserItems { get; }
         IShopItemRepository ShopItems { get; }
+        INPCRepository NPCs { get; }
         
         Task SaveChangesAsync();
     }
