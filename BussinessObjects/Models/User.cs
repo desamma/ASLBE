@@ -8,7 +8,7 @@ namespace BussinessObjects.Models
     {
         [MaxLength(50)]
         [Required]
-        public override string UserName { get; set; }
+        public override string? UserName { get; set; }
 
         [DataType(DataType.Date)]
         [Display(Name = "Date of Birth")]
@@ -36,7 +36,7 @@ namespace BussinessObjects.Models
         // --- CÁC TRƯỜNG BỔ SUNG THEO ERD ---
 
         [Display(Name = "Currency Amount")]
-        public decimal CurrencyAmount { get; set; }
+        public int CurrencyAmount { get; set; }
 
         [Display(Name = "Pity Counter")]
         public int PityCounter { get; set; }

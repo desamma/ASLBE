@@ -13,6 +13,6 @@ namespace BussinessObjects.DTOs.Payment
         public int BaseVp { get; set; }
         public int BonusVp { get; set; }
         public int TotalVp { get; set; }
-        public decimal PriceVnd { get; set; }
+        public int PriceVnd { get; set; }
     }
 }

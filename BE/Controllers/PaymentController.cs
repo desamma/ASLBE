@@ -1,7 +1,6 @@
 ﻿using BussinessObjects.DTOs.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using Services.IServices;
 using System.Security.Claims;
 
@@ -20,10 +19,7 @@ namespace BE.Controllers
             _logger = logger;
         }
 
-        // ────────────────────────────────────────────────────────────────────────
         // GET /api/payment/packages
-        // Lấy danh sách gói VP để hiển thị UI (không cần đăng nhập)
-        // ────────────────────────────────────────────────────────────────────────
         [HttpGet("packages")]
         [AllowAnonymous]
         public async Task<IActionResult> GetPackages()
@@ -32,11 +28,7 @@ namespace BE.Controllers
             return Ok(new { success = true, data = packages });
         }
 
-        // ────────────────────────────────────────────────────────────────────────
         // POST /api/payment/create
-        // Tạo payment link — cần đăng nhập
-        // Body: { "vpPackage": 110 }
-        // ────────────────────────────────────────────────────────────────────────
         [HttpPost("create")]
         [Authorize]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
@@ -46,7 +38,7 @@ namespace BE.Controllers
 
             Guid userId = GetCurrentUserId();
             if (userId == Guid.Empty)
-                return Unauthorized(new { success = false, message = "Không xác định được user." });
+                return Unauthorized(new { success = false, message = "User not identified." });
 
             var result = await _paymentService.CreatePaymentAsync(userId, request);
 
@@ -56,41 +48,29 @@ namespace BE.Controllers
             return Ok(result);
         }
 
-        // ────────────────────────────────────────────────────────────────────────
         // POST /api/payment/webhook
-        // PayOS gọi endpoint này sau khi thanh toán — KHÔNG cần auth
-        // ────────────────────────────────────────────────────────────────────────
         [HttpPost("webhook")]
         [AllowAnonymous]
         public async Task<IActionResult> Webhook([FromBody] PayOSWebhookPayload payload)
         {
             _logger.LogInformation("PayOS webhook hit. Code={Code}", payload.Code);
-
             bool ok = await _paymentService.HandleWebhookAsync(payload);
-
-            // PayOS yêu cầu trả 200 OK để dừng retry
             return Ok(new { success = ok });
         }
 
-        // ────────────────────────────────────────────────────────────────────────
         // GET /api/payment/status/{orderCode}
-        // FE gọi sau khi user quay về từ trang PayOS để kiểm tra kết quả
-        // ────────────────────────────────────────────────────────────────────────
         [HttpGet("status/{orderCode:long}")]
         [Authorize]
         public async Task<IActionResult> GetStatus(long orderCode)
         {
             var transaction = await _paymentService.GetTransactionByOrderCodeAsync(orderCode);
             if (transaction is null)
-                return NotFound(new { success = false, message = "Không tìm thấy giao dịch." });
+                return NotFound(new { success = false, message = "Transaction not found." });
 
             return Ok(new { success = true, data = transaction });
         }
 
-        // ────────────────────────────────────────────────────────────────────────
         // GET /api/payment/history
-        // Lịch sử nạp tiền của user hiện tại
-        // ────────────────────────────────────────────────────────────────────────
         [HttpGet("history")]
         [Authorize]
         public async Task<IActionResult> GetHistory()
@@ -104,8 +84,22 @@ namespace BE.Controllers
         }
 
         // ────────────────────────────────────────────────────────────────────────
-        // Helpers
+        // GET /api/payment/balance
+        // Lấy VP hiện tại từ DB — dùng để cập nhật UI header
         // ────────────────────────────────────────────────────────────────────────
+        [HttpGet("balance")]
+        [Authorize]
+        public async Task<IActionResult> GetBalance()
+        {
+            Guid userId = GetCurrentUserId();
+            if (userId == Guid.Empty)
+                return Unauthorized();
+
+            var balance = await _paymentService.GetUserBalanceAsync(userId);
+            return Ok(new { success = true, balance });
+        }
+
+        // Helpers
         private Guid GetCurrentUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)

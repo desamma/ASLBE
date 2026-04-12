@@ -36,9 +36,6 @@ namespace Services.IServices
             _logger = logger;
         }
 
-        // ────────────────────────────────────────────────────────────────────────
-        // 1. Lấy danh sách gói VP
-        // ────────────────────────────────────────────────────────────────────────
         public Task<List<VpPackageDto>> GetPackagesAsync()
         {
             var result = VpPackageCatalog.Packages.Values.Select(p => new VpPackageDto
@@ -54,24 +51,25 @@ namespace Services.IServices
             return Task.FromResult(result);
         }
 
-        // ────────────────────────────────────────────────────────────────────────
-        // 2. Tạo payment link
-        // ────────────────────────────────────────────────────────────────────────
         public async Task<CreatePaymentResponse> CreatePaymentAsync(Guid userId, BussinessObjects.DTOs.Payment.CreatePaymentRequest request)
         {
-            // Validate gói VP
+            _logger.LogInformation("CreatePayment START - UserId={UserId}, VpPackage={VpPackage}", userId, request.VpPackage);
+
             if (!VpPackageCatalog.TryGet(request.VpPackage, out var package) || package is null)
-                return Fail("Gói VP không hợp lệ.");
+            {
+                _logger.LogError("Invalid VP package: {VpPackage}", request.VpPackage);
+                return Fail("Goi VP khong hop le.");
+            }
 
-            // OrderCode phải là long dương, unique — dùng timestamp ms
             long orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            _logger.LogInformation("Generated OrderCode={OrderCode}", orderCode);
 
-            // URL sau khi thanh toán xong / huỷ — FE sẽ xử lý tiếp
-            string baseUrl = _config["PayOS:ReturnBaseUrl"] ?? "http://localhost:3000";
-            string returnUrl = $"{baseUrl}/payment/success?orderCode={orderCode}";
-            string cancelUrl = $"{baseUrl}/payment/cancel?orderCode={orderCode}";
+            string baseUrl = _config["PayOS:ReturnBaseUrl"] ?? "https://localhost:7032/Payment/Result";
+            string returnUrl = $"{baseUrl}?orderCode={orderCode}";
+            string cancelUrl = $"{baseUrl}?orderCode={orderCode}&cancelled=true";
 
-            // SDK v2: CreatePaymentLinkRequest từ PayOS.Models
+            _logger.LogInformation("ReturnUrl={ReturnUrl}", returnUrl);
+
             var paymentRequest = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode,
@@ -83,16 +81,16 @@ namespace Services.IServices
 
             try
             {
-                // SDK v2: PaymentRequests.CreateAsync()
+                _logger.LogInformation("Calling PayOS.PaymentRequests.CreateAsync()");
                 CreatePaymentLinkResponse result = await _payOS.PaymentRequests.CreateAsync(paymentRequest);
+                _logger.LogInformation("PayOS response received. CheckoutUrl={CheckoutUrl}", result.CheckoutUrl);
 
-                // Lưu Transaction vào DB với Status = Pending
                 var transaction = new Transaction
                 {
                     Id = Guid.NewGuid(),
                     OrderCode = orderCode,
                     Name = package.DisplayName,
-                    Description = $"Nạp {package.TotalVp} VP vào tài khoản",
+                    Description = $"Nap {package.TotalVp} VP vao tai khoan",
                     Type = "TopUp",
                     Amount = package.PriceVnd,
                     CurrencyAwarded = package.TotalVp,
@@ -105,13 +103,12 @@ namespace Services.IServices
 
                 _db.Transactions.Add(transaction);
                 await _db.SaveChangesAsync();
-
-                _logger.LogInformation("Created payment link. OrderCode={OrderCode} UserId={UserId}", orderCode, userId);
+                _logger.LogInformation("Transaction saved. TransactionId={TransactionId}, Status=Pending", transaction.Id);
 
                 return new CreatePaymentResponse
                 {
                     Success = true,
-                    Message = "Tạo link thanh toán thành công",
+                    Message = "Tao link thanh toan thanh cong",
                     CheckoutUrl = result.CheckoutUrl,
                     OrderCode = orderCode,
                     TransactionId = transaction.Id
@@ -119,20 +116,16 @@ namespace Services.IServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "PayOS createPaymentLink failed. UserId={UserId}", userId);
-                return Fail($"Lỗi khi tạo link thanh toán: {ex.Message}");
+                _logger.LogError(ex, "PayOS createPaymentLink failed. UserId={UserId}, Error={Error}", userId, ex.Message);
+                return Fail($"Loi khi tao link thanh toan: {ex.Message}");
             }
         }
 
-        // ────────────────────────────────────────────────────────────────────────
-        // 3. Xử lý webhook từ PayOS
-        // ────────────────────────────────────────────────────────────────────────
         public async Task<bool> HandleWebhookAsync(BussinessObjects.DTOs.Payment.PayOSWebhookPayload payload)
         {
-            _logger.LogInformation("Webhook received. Code={Code} OrderCode={OrderCode}",
-                payload.Code, payload.Data?.OrderCode);
+            _logger.LogInformation("Webhook START - Code={Code}, Success={Success}, OrderCode={OrderCode}",
+                payload.Code, payload.Success, payload.Data?.OrderCode);
 
-            // SDK v2: class Webhook + WebhookData đều nằm trong PayOS.Models
             try
             {
                 var webhookBody = new Webhook
@@ -162,7 +155,9 @@ namespace Services.IServices
                     }
                 };
 
+                _logger.LogInformation("Verifying webhook signature...");
                 await _payOS.Webhooks.VerifyAsync(webhookBody);
+                _logger.LogInformation("Webhook signature verified");
             }
             catch (Exception ex)
             {
@@ -171,7 +166,11 @@ namespace Services.IServices
                 return false;
             }
 
-            if (payload.Data is null) return false;
+            if (payload.Data is null)
+            {
+                _logger.LogWarning("Webhook data is null");
+                return false;
+            }
 
             long orderCode = payload.Data.OrderCode;
 
@@ -185,20 +184,21 @@ namespace Services.IServices
                 return false;
             }
 
-            // Idempotent — bỏ qua nếu đã xử lý rồi
+            _logger.LogInformation("Found transaction. CurrentStatus={Status}, UserId={UserId}",
+                transaction.Status, transaction.UserId);
+
             if (transaction.Status == "Paid")
             {
                 _logger.LogInformation("Transaction already paid. OrderCode={OrderCode}", orderCode);
                 return true;
             }
 
-            // PayOS trả code "00" = thành công
             if (payload.Code == "00" && payload.Success)
             {
+                _logger.LogInformation("Payment successful. Updating transaction...");
                 transaction.Status = "Paid";
                 transaction.PaidAt = DateTime.UtcNow;
 
-                // Cộng VP vào tài khoản user
                 if (transaction.User is not null)
                 {
                     transaction.User.CurrencyAmount += transaction.CurrencyAwarded;
@@ -207,37 +207,97 @@ namespace Services.IServices
             }
             else
             {
+                _logger.LogWarning("Payment failed. Code={Code}, Success={Success}", payload.Code, payload.Success);
                 transaction.Status = "Failed";
             }
 
             await _db.SaveChangesAsync();
+            _logger.LogInformation("Webhook SUCCESS - Transaction updated. Status={Status}", transaction.Status);
             return true;
         }
 
-        // ────────────────────────────────────────────────────────────────────────
-        // 4. Lịch sử giao dịch của user
-        // ────────────────────────────────────────────────────────────────────────
         public async Task<List<TransactionDto>> GetUserTransactionsAsync(Guid userId)
         {
-            return await _db.Transactions
+            _logger.LogInformation("GetUserTransactions: UserId={UserId}", userId);
+            var transactions = await _db.Transactions
                 .Where(t => t.UserId == userId)
                 .OrderByDescending(t => t.CreatedAt)
                 .Select(t => ToDto(t))
                 .ToListAsync();
+
+            _logger.LogInformation("Found {Count} transactions", transactions.Count);
+            return transactions;
         }
 
-        // ────────────────────────────────────────────────────────────────────────
-        // 5. Kiểm tra đơn theo orderCode (dùng sau khi return từ PayOS)
-        // ────────────────────────────────────────────────────────────────────────
         public async Task<TransactionDto?> GetTransactionByOrderCodeAsync(long orderCode)
         {
-            var t = await _db.Transactions.FirstOrDefaultAsync(x => x.OrderCode == orderCode);
-            return t is null ? null : ToDto(t);
+            _logger.LogInformation("GetTransactionByOrderCode START - OrderCode={OrderCode}", orderCode);
+
+            var t = await _db.Transactions
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(x => x.OrderCode == orderCode);
+
+            if (t is null)
+            {
+                _logger.LogWarning("Transaction not found. OrderCode={OrderCode}", orderCode);
+                return null;
+            }
+
+            _logger.LogInformation("Current status: Status={Status}", t.Status);
+
+            if (t.Status == "Pending")
+            {
+                _logger.LogInformation("Status is Pending, polling PayOS...");
+
+                try
+                {
+                    var paymentInfo = await _payOS.PaymentRequests.GetAsync(orderCode);
+                    string? paymentStatus = paymentInfo?.Status.ToString();
+
+                    _logger.LogInformation("PayOS response: Status={PaymentStatus}", paymentStatus);
+
+                    if (string.Equals(paymentStatus, "PAID", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogInformation("PayOS confirms PAID. Updating database...");
+                        t.Status = "Paid";
+                        t.PaidAt = DateTime.UtcNow;
+
+                        if (t.User is not null)
+                        {
+                            t.User.CurrencyAmount += t.CurrencyAwarded;
+                            _logger.LogInformation("Credited {VP} VP to UserId={UserId}", t.CurrencyAwarded, t.UserId);
+                        }
+
+                        await _db.SaveChangesAsync();
+                        _logger.LogInformation("Database updated successfully");
+                    }
+                    else if (string.Equals(paymentStatus, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogInformation("PayOS confirms CANCELLED");
+                        t.Status = "Cancelled";
+                        await _db.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        _logger.LogInformation("PayOS status: {PaymentStatus} (not final yet)", paymentStatus);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Could not poll PayOS. OrderCode={OrderCode} Error={Error}",
+                        orderCode, ex.Message);
+                }
+            }
+
+            _logger.LogInformation("GetTransactionByOrderCode SUCCESS");
+            return ToDto(t);
         }
 
-        // ────────────────────────────────────────────────────────────────────────
-        // Helpers
-        // ────────────────────────────────────────────────────────────────────────
+        public async Task<decimal> GetUserBalanceAsync(Guid userId)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            return user?.CurrencyAmount ?? 0;
+        }
 
         private static TransactionDto ToDto(Transaction t) => new()
         {

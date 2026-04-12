@@ -43,7 +43,7 @@ namespace Services.IServices
         public byte Gender { get; set; }
         public string UserAvatar { get; set; }
         public bool IsBanned { get; set; }
-        public decimal CurrencyAmount { get; set; }
+        public int CurrencyAmount { get; set; }
         public int PityCounter { get; set; }
     }
 }
