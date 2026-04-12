@@ -9,5 +9,9 @@ namespace DataAccess.IRepositories
         IGenericRepository<GameNews> GameNews { get; }
         IGenericRepository<Transaction> Transactions { get; }
         IUserItemRepository UserItems { get; }
+        IShopItemRepository ShopItems { get; }
+        INPCRepository NPCs { get; }
+        
+        Task SaveChangesAsync();
     }
 }

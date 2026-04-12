@@ -55,7 +55,7 @@ namespace Utilities
 <head>
 <meta charset=""UTF-8"">
 <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-<title>Verify Your GalleryCart Account</title>
+<title>Verify Your Ashen Light Account</title>
 </head>
 <body style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4;"">
 <table role=""presentation"" style=""width: 100%; border-collapse: collapse;"">
@@ -65,7 +65,7 @@ namespace Utilities
                 <!-- Header -->
                 <tr>
                     <td style=""background-color: #0078D4; padding: 20px; text-align: center;"">
-                        <h1 style=""color: #ffffff; margin: 0; font-size: 28px;"">GalleryCart</h1>
+                        <h1 style=""color: #ffffff; margin: 0; font-size: 28px;"">Ashen Light</h1>
                     </td>
                 </tr>
                 <!-- Content -->
@@ -74,15 +74,15 @@ namespace Utilities
                         <h2 style=""color: #0078D4; margin-top: 0; margin-bottom: 20px; font-size: 24px;"">{1}</h2>
                         <p style=""margin-top: 0; margin-bottom: 20px;"">Hello, {0}</p>
                         <p style=""margin-top: 0; margin-bottom: 20px;"">{2}</p>
-                        <p style=""margin-top: 0; margin-bottom: 20px;"">If you have any questions or need assistance, please don't hesitate to contact our support team at support@gallerycart.com.</p>
-                        <p style=""margin-top: 0; margin-bottom: 0;"">Best regards,<br>The GalleryCart Team</p>
+                        <p style=""margin-top: 0; margin-bottom: 20px;"">If you have any questions or need assistance, please don't hesitate to contact our support team at support@ashenlight.com.</p>
+                        <p style=""margin-top: 0; margin-bottom: 0;"">Best regards,<br>The Ashen Light Team</p>
                     </td>
                 </tr>
                 <!-- Footer -->
                 <tr>
                     <td style=""background-color: #f8f8f8; padding: 20px; text-align: center; font-size: 14px; color: #888888;"">
                         <p style=""margin: 0;"">This is an automated message, please do not reply to this email.</p>
-                        <p style=""margin: 10px 0 0;"">© 2025 GalleryCart. All rights reserved.</p>
+                        <p style=""margin: 10px 0 0;"">© 2026 Ashen Light. All rights reserved.</p>
                     </td>
                 </tr>
             </table>
