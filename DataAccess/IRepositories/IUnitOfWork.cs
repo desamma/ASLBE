@@ -7,6 +7,10 @@ namespace DataAccess.IRepositories
         IGenericRepository<User> Users { get; }
         IGenericRepository<Item> Items { get; }
         IGenericRepository<GameNews> GameNews { get; }
+        IGenericRepository<Transaction> Transactions { get; }
         IUserItemRepository UserItems { get; }
+        IShopItemRepository ShopItems { get; }
+        
+        Task SaveChangesAsync();
     }
 }
