@@ -35,6 +35,7 @@ namespace DataAccess
             modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
             modelBuilder.Entity<User>().HasIndex(u => u.UserName).IsUnique();
             modelBuilder.Entity<Item>().HasIndex(i => i.Name).IsUnique();
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.OrderCode).IsUnique();
             modelBuilder.Entity<GameNews>().HasIndex(gn => gn.Title).IsUnique();
             modelBuilder.Entity<NPC>().HasIndex(n => n.Name).IsUnique();
 
