@@ -48,7 +48,7 @@ namespace Services.IServices
         public string UserAvatar { get; set; }
         public string SaveFilePath { get; set; }
         public bool IsBanned { get; set; }
-        public decimal CurrencyAmount { get; set; }
+        public int CurrencyAmount { get; set; }
         public int PityCounter { get; set; }
     }
 }
