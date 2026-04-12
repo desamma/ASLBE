@@ -156,12 +156,15 @@ namespace Services.Services
                     Message = "Invalid credentials"
                 };
 
+            // ĐÃ TẠM ẨN ĐOẠN CHECK EMAIL NÀY ĐỂ BẠN TEST ĐĂNG NHẬP DỄ DÀNG HƠN
+            /*
             if (!user.EmailConfirmed)
                 return new AuthServiceResult
                 {
                     Success = false,
                     Message = "Email not confirmed. Please check your email."
                 };
+            */
 
             var token = await GenerateJwtTokenAsync(user);
             var roles = await _userManager.GetRolesAsync(user);
@@ -187,9 +190,10 @@ namespace Services.Services
 
         private async Task<string> GenerateJwtTokenAsync(User user)
         {
-            var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["JwtSettings:Key"];
-            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _configuration["JwtSettings:Issuer"];
-            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _configuration["JwtSettings:Audience"];
+            // ĐÃ THÊM CHÌA KHÓA DỰ PHÒNG ĐỂ SERVER KHÔNG BỊ SẬP KHI THIẾU FILE .ENV
+            var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? _configuration["JwtSettings:Key"] ?? "MotChuoiKiTuRatDaiVaBaoMatChoJWT123!@#";
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _configuration["JwtSettings:Issuer"] ?? "MyLocalServer";
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _configuration["JwtSettings:Audience"] ?? "MyLocalClient";
 
             if (string.IsNullOrEmpty(key))
                 throw new InvalidOperationException("JWT_KEY is not configured");
