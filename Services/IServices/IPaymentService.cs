@@ -23,5 +23,6 @@ namespace Services.IServices
 
         /// <summary>Kiểm tra trạng thái 1 đơn (dùng khi return từ PayOS)</summary>
         Task<TransactionDto?> GetTransactionByOrderCodeAsync(long orderCode);
+        Task<decimal> GetUserBalanceAsync(Guid userId);
     }
 }
