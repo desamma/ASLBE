@@ -20,6 +20,7 @@ namespace DataAccess
         public virtual DbSet<GachaHistory> GachaHistories { get; set; }
         public virtual DbSet<ShopItem> ShopItems { get; set; }
         public virtual DbSet<ShopPurchase> ShopPurchases { get; set; }
+        public virtual DbSet<NPC> NPCs { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -35,6 +36,7 @@ namespace DataAccess
             modelBuilder.Entity<User>().HasIndex(u => u.UserName).IsUnique();
             modelBuilder.Entity<Item>().HasIndex(i => i.Name).IsUnique();
             modelBuilder.Entity<GameNews>().HasIndex(gn => gn.Title).IsUnique();
+            modelBuilder.Entity<NPC>().HasIndex(n => n.Name).IsUnique();
 
             //Primary keys
             modelBuilder.Entity<Item>().HasKey(i => i.Id);
@@ -46,6 +48,7 @@ namespace DataAccess
             modelBuilder.Entity<GachaHistory>().HasKey(gh => gh.Id);
             modelBuilder.Entity<ShopItem>().HasKey(si => si.Id);
             modelBuilder.Entity<ShopPurchase>().HasKey(sp => sp.Id);
+            modelBuilder.Entity<NPC>().HasKey(n => n.Id);
 
             //Table names
             modelBuilder.Entity<GachaBanner>().ToTable("GachaBanner");
