@@ -11,6 +11,7 @@ namespace DataAccess.Repositories
         public IGenericRepository<Item> Items { get; }
         public IGenericRepository<Transaction> Transactions { get; }
         public IGenericRepository<GameNews> GameNews { get; }
+        public IGenericRepository<ShopPurchase> ShopPurchases { get; }
         public IUserItemRepository UserItems { get; }
         public IShopItemRepository ShopItems { get; }
         public INPCRepository NPCs { get; }
@@ -26,6 +27,7 @@ namespace DataAccess.Repositories
             UserItems = new UserItemRepository(_context);
             ShopItems = new ShopItemRepository(_context);
             NPCs = new NPCRepository(_context);
+            ShopPurchases = new GenericRepository<ShopPurchase>(_context);
         }
 
         public async Task SaveChangesAsync()
