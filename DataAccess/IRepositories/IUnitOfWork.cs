@@ -8,8 +8,11 @@ namespace DataAccess.IRepositories
         IGenericRepository<Item> Items { get; }
         IGenericRepository<GameNews> GameNews { get; }
         IGenericRepository<Transaction> Transactions { get; }
+
+        IGenericRepository<ShopPurchase> ShopPurchases { get; }
         IUserItemRepository UserItems { get; }
         IShopItemRepository ShopItems { get; }
+        INPCRepository NPCs { get; }
         
         Task SaveChangesAsync();
     }

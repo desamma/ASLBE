@@ -72,14 +72,17 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
         ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")))
+            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ?? string.Empty))
     };
-})
+});
+
+/*
 .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
 {
     options.ClientId = Environment.GetEnvironmentVariable("GOOGLESETTINGS_CLIENTID")!;
     options.ClientSecret = Environment.GetEnvironmentVariable("GOOGLESETTINGS_CLIENTSECRET")!;
 });
+*/
 
 builder.Services.AddAuthorization();
 
@@ -103,9 +106,11 @@ builder.Services.AddScoped<IGameNewsService, GameNewsService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IShopItemService, ShopItemService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserItemService, UserItemService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-
+builder.Services.AddScoped<INPCService, NPCService>();
+builder.Services.AddScoped<IShopPurchaseService, ShopPurchaseService>();
 //Configure .env config binding
 builder.Configuration["EmailSettings:FromEmail"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMEMAIL");
 builder.Configuration["EmailSettings:FromPassword"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMPASSWORD");

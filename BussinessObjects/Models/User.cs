@@ -27,6 +27,9 @@ namespace BussinessObjects.Models
         [ValidateNever]
         public string? UserAvatar { get; set; }
 
+        [ValidateNever]
+        public string? SaveFilePath { get; set; }
+
         [DataType(DataType.DateTime)]
         [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}")]
         public DateTime? CreatedDate { get; set; } = DateTime.Now;

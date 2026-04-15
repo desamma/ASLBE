@@ -20,8 +20,4 @@
     <ProjectReference Include="..\BussinessObjects\BussinessObjects.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Migrations\" />
-  </ItemGroup>
-
 </Project>
