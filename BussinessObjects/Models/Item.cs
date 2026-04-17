@@ -29,6 +29,6 @@ namespace BussinessObjects.Models
 
         public ICollection<UserItem> UserItems { get; set; } = new List<UserItem>();
 
-        public ICollection<GachaItem> GachaItems { get; set; } = new List<GachaItem>();
+        
     }
 }
