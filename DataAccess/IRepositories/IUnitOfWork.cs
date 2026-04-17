@@ -8,7 +8,10 @@ namespace DataAccess.IRepositories
         IGenericRepository<Item> Items { get; }
         IGenericRepository<GameNews> GameNews { get; }
         IGenericRepository<Transaction> Transactions { get; }
+        IGenericRepository<GachaBanner> GachaBanners { get; }
+        IGenericRepository<GachaItem> GachaItems { get; }
 
+        IGenericRepository<GachaHistory> GachaHistory { get; }
         IGenericRepository<ShopPurchase> ShopPurchases { get; }
         IUserItemRepository UserItems { get; }
         IShopItemRepository ShopItems { get; }
