@@ -24,28 +24,29 @@ namespace Services.Services
         {
             var query = _context.GachaHistories
                 .Include(h => h.User)
-                .Include(h => h.Item)
+                .Include(h => h.GachaItem)
+                    .ThenInclude(gi => gi.Item) // Giả định GachaItem có Navigation Property trỏ tới Item
                 .AsNoTracking();
 
+            // Nếu Admin muốn lọc theo 1 User cụ thể
             if (userId.HasValue)
             {
                 query = query.Where(h => h.UserId == userId.Value);
             }
 
-            var history = await query.OrderByDescending(h => h.PulledAt)
+            // Sắp xếp lịch sử mới nhất lên đầu
+            var history = await query.OrderByDescending(h => h.Date)
                 .Select(h => new AdminGachaHistoryDto
                 {
                     Id = h.Id,
                     UserId = h.UserId,
                     UserName = h.User != null ? h.User.UserName : "Unknown",
-
-                    ItemName = h.Item != null ? h.Item.Name : "Unknown Item",
-                    ItemRarity = h.Item != null ? h.Item.Rarity : "Unknown",
-
-                    Date = h.PulledAt,
-
-                    IsSuccess = true,
-                    NewUserBalance = 0
+                    // Lấy tên và độ hiếm từ Item thông qua GachaItem
+                    ItemName = h.GachaItem != null && h.GachaItem.Item != null ? h.GachaItem.Item.Name : "Unknown Item",
+                    ItemRarity = h.GachaItem != null && h.GachaItem.Item != null ? h.GachaItem.Item.Rarity : "Unknown",
+                    Date = h.Date,
+                    IsSuccess = h.IsSuccess,
+                    NewUserBalance = h.NewUserBalance
                 }).ToListAsync();
 
             return new ServiceResult<List<AdminGachaHistoryDto>>
@@ -80,9 +81,10 @@ namespace Services.Services
 
         public async Task<ServiceResult<AdminItemDto>> CreateItemAsync(CreateUpdateItemDto dto)
         {
+            // 1. Khởi tạo Object Item mới
             var newItem = new Item
             {
-                Id = Guid.NewGuid(), 
+                Id = Guid.NewGuid(), // Tạo ID mới
                 Name = dto.Name,
                 Description = dto.Description,
                 Type = dto.Type,
@@ -91,9 +93,11 @@ namespace Services.Services
                 StatsLines = dto.StatsLines ?? new List<string>()
             };
 
+            // 2. Lưu vào Database
             _context.Items.Add(newItem);
             await _context.SaveChangesAsync();
 
+            // 3. Map sang DTO để trả về cho Web hiển thị luôn mà không cần gọi lại API get
             var resultDto = new AdminItemDto
             {
                 Id = newItem.Id,
@@ -110,12 +114,14 @@ namespace Services.Services
 
         public async Task<ServiceResult<AdminItemDto>> UpdateItemAsync(Guid itemId, CreateUpdateItemDto dto)
         {
+            // 1. Tìm vật phẩm trong database
             var item = await _context.Items.FindAsync(itemId);
             if (item == null)
             {
                 return new ServiceResult<AdminItemDto> { Success = false, Message = "Không tìm thấy vật phẩm này." };
             }
 
+            // 2. Cập nhật các trường thông tin
             item.Name = dto.Name;
             item.Description = dto.Description;
             item.Type = dto.Type;
@@ -123,9 +129,11 @@ namespace Services.Services
             item.ImagePath = dto.ImagePath;
             item.StatsLines = dto.StatsLines ?? new List<string>();
 
+            // 3. Lưu thay đổi
             _context.Items.Update(item);
             await _context.SaveChangesAsync();
 
+            // 4. Trả về kết quả
             var resultDto = new AdminItemDto
             {
                 Id = item.Id,
