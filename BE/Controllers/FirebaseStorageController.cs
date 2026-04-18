@@ -36,15 +36,13 @@ public class FirebaseStorageController : ControllerBase
 
         try
         {
-            using (var stream = file.OpenReadStream())
-            {
-                var fileUrl = await _firebaseStorageService.UploadFileAsync(
-                    stream,
-                    file.FileName,
-                    folderPath);
+            using var stream = file.OpenReadStream();
+            var fileUrl = await _firebaseStorageService.UploadFileAsync(
+                stream,
+                file.FileName,
+                folderPath);
 
-                return Ok(new { url = fileUrl, fileName = file.FileName });
-            }
+            return Ok(new { url = fileUrl, fileName = file.FileName });
         }
         catch (Exception ex)
         {
@@ -152,4 +150,128 @@ public class FirebaseStorageController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Upload multiple files to Firebase Storage
+    /// </summary>
+    [HttpPost("upload-multiple")]
+    public async Task<IActionResult> UploadMultipleFiles(
+        [FromForm] IFormFileCollection files,
+        [FromForm] string? folderPath = null)
+    {
+        if (files == null || files.Count == 0)
+        {
+            return BadRequest("No files provided");
+        }
+
+        var uploadedFiles = new List<object>();
+        var failedFiles = new List<object>();
+
+        try
+        {
+            foreach (var file in files)
+            {
+                if (file == null || file.Length == 0)
+                {
+                    failedFiles.Add(new { fileName = file?.FileName, error = "File is empty" });
+                    continue;
+                }
+
+                try
+                {
+                    using var stream = file.OpenReadStream();
+                    var fileUrl = await _firebaseStorageService.UploadFileAsync(
+                        stream,
+                        file.FileName,
+                        folderPath);
+
+                    uploadedFiles.Add(new { url = fileUrl, fileName = file.FileName });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error uploading file {FileName}", file.FileName);
+                    failedFiles.Add(new { fileName = file.FileName, error = ex.Message });
+                }
+            }
+
+            return Ok(new 
+            { 
+                uploadedCount = uploadedFiles.Count, 
+                failedCount = failedFiles.Count,
+                uploadedFiles,
+                failedFiles
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in batch upload to Firebase Storage");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Delete multiple files from Firebase Storage
+    /// </summary>
+    [HttpDelete("delete-multiple")]
+    public async Task<IActionResult> DeleteMultipleFiles([FromBody] DeleteMultipleFilesRequest request)
+    {
+        if (request?.FilePaths == null || request.FilePaths.Count == 0)
+        {
+            return BadRequest("No file paths provided");
+        }
+
+        var deletedFiles = new List<string>();
+        var failedFiles = new List<object>();
+
+        try
+        {
+            foreach (var filePath in request.FilePaths)
+            {
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    failedFiles.Add(new { filePath, error = "File path is empty" });
+                    continue;
+                }
+
+                try
+                {
+                    var deleted = await _firebaseStorageService.DeleteFileAsync(filePath);
+                    if (deleted)
+                    {
+                        deletedFiles.Add(filePath);
+                    }
+                    else
+                    {
+                        failedFiles.Add(new { filePath, error = "File not found" });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deleting file {FilePath}", filePath);
+                    failedFiles.Add(new { filePath, error = ex.Message });
+                }
+            }
+
+            return Ok(new 
+            { 
+                deletedCount = deletedFiles.Count, 
+                failedCount = failedFiles.Count,
+                deletedFiles,
+                failedFiles
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in batch delete from Firebase Storage");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+}
+
+/// <summary>
+/// Request model for deleting multiple files
+/// </summary>
+public class DeleteMultipleFilesRequest
+{
+    public List<string> FilePaths { get; set; } = new();
 }
