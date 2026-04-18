@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.IServices;
 
@@ -7,6 +8,7 @@ namespace BE.Controllers;
 /// Example controller demonstrating Firebase Storage usage
 /// </summary>
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class FirebaseStorageController : ControllerBase
 {
@@ -25,10 +27,9 @@ public class FirebaseStorageController : ControllerBase
     /// Upload a file to Firebase Storage
     /// </summary>
     [HttpPost("upload")]
-    public async Task<IActionResult> UploadFile(
-        [FromForm] IFormFile file,
-        [FromForm] string? folderPath = null)
+    public async Task<IActionResult> UploadFile([FromForm] UploadFileRequest request)
     {
+        var file = request.File;
         if (file == null || file.Length == 0)
         {
             return BadRequest("No file provided");
@@ -40,7 +41,7 @@ public class FirebaseStorageController : ControllerBase
             var fileUrl = await _firebaseStorageService.UploadFileAsync(
                 stream,
                 file.FileName,
-                folderPath);
+                request.FolderPath);
 
             return Ok(new { url = fileUrl, fileName = file.FileName });
         }
@@ -155,10 +156,9 @@ public class FirebaseStorageController : ControllerBase
     /// Upload multiple files to Firebase Storage
     /// </summary>
     [HttpPost("upload-multiple")]
-    public async Task<IActionResult> UploadMultipleFiles(
-        [FromForm] IFormFileCollection files,
-        [FromForm] string? folderPath = null)
+    public async Task<IActionResult> UploadMultipleFiles([FromForm] UploadMultipleFilesRequest request)
     {
+        var files = request.Files;
         if (files == null || files.Count == 0)
         {
             return BadRequest("No files provided");
@@ -183,7 +183,7 @@ public class FirebaseStorageController : ControllerBase
                     var fileUrl = await _firebaseStorageService.UploadFileAsync(
                         stream,
                         file.FileName,
-                        folderPath);
+                        request.FolderPath);
 
                     uploadedFiles.Add(new { url = fileUrl, fileName = file.FileName });
                 }
@@ -194,9 +194,9 @@ public class FirebaseStorageController : ControllerBase
                 }
             }
 
-            return Ok(new 
-            { 
-                uploadedCount = uploadedFiles.Count, 
+            return Ok(new
+            {
+                uploadedCount = uploadedFiles.Count,
                 failedCount = failedFiles.Count,
                 uploadedFiles,
                 failedFiles
@@ -252,9 +252,9 @@ public class FirebaseStorageController : ControllerBase
                 }
             }
 
-            return Ok(new 
-            { 
-                deletedCount = deletedFiles.Count, 
+            return Ok(new
+            {
+                deletedCount = deletedFiles.Count,
                 failedCount = failedFiles.Count,
                 deletedFiles,
                 failedFiles
@@ -267,11 +267,28 @@ public class FirebaseStorageController : ControllerBase
         }
     }
 }
-
 /// <summary>
 /// Request model for deleting multiple files
 /// </summary>
 public class DeleteMultipleFilesRequest
 {
     public List<string> FilePaths { get; set; } = new();
+}
+
+/// <summary>
+/// Request model for uploading a single file
+/// </summary>
+public class UploadFileRequest
+{
+    public IFormFile File { get; set; } = default!;
+    public string? FolderPath { get; set; }
+}
+
+/// <summary>
+/// Request model for uploading multiple files
+/// </summary>
+public class UploadMultipleFilesRequest
+{
+    public IFormFileCollection Files { get; set; } = default!;
+    public string? FolderPath { get; set; }
 }
