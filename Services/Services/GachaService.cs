@@ -182,6 +182,8 @@ namespace Services.Services
             {
                 var histories = _unitOfWork.GachaHistory
                     .GetQueryable(asNoTracking: true)
+                    .Include(h => h.Item)         
+                    .Include(h => h.GachaBanner)
                     .Where(h => h.UserId == userId)
                     .OrderByDescending(h => h.PulledAt)
                     .Skip((page - 1) * pageSize)
