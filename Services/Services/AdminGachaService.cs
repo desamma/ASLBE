@@ -22,10 +22,10 @@ namespace Services.Services
 
         public async Task<ServiceResult<List<AdminGachaHistoryDto>>> GetGachaHistoryAsync(Guid? userId = null)
         {
+            // 1. Include trực tiếp h.Item thay vì h.GachaItem
             var query = _context.GachaHistories
                 .Include(h => h.User)
-                .Include(h => h.GachaItem)
-                    .ThenInclude(gi => gi.Item) // Giả định GachaItem có Navigation Property trỏ tới Item
+                .Include(h => h.Item)
                 .AsNoTracking();
 
             // Nếu Admin muốn lọc theo 1 User cụ thể
@@ -34,19 +34,24 @@ namespace Services.Services
                 query = query.Where(h => h.UserId == userId.Value);
             }
 
-            // Sắp xếp lịch sử mới nhất lên đầu
-            var history = await query.OrderByDescending(h => h.Date)
+            // 2. OrderBy theo PulledAt thay vì Date
+            var history = await query.OrderByDescending(h => h.PulledAt)
                 .Select(h => new AdminGachaHistoryDto
                 {
                     Id = h.Id,
                     UserId = h.UserId,
                     UserName = h.User != null ? h.User.UserName : "Unknown",
-                    // Lấy tên và độ hiếm từ Item thông qua GachaItem
-                    ItemName = h.GachaItem != null && h.GachaItem.Item != null ? h.GachaItem.Item.Name : "Unknown Item",
-                    ItemRarity = h.GachaItem != null && h.GachaItem.Item != null ? h.GachaItem.Item.Rarity : "Unknown",
-                    Date = h.Date,
-                    IsSuccess = h.IsSuccess,
-                    NewUserBalance = h.NewUserBalance
+
+                    // 3. Lấy Name và Rarity trực tiếp từ h.Item
+                    ItemName = h.Item != null ? h.Item.Name : "Unknown Item",
+                    ItemRarity = h.Item != null ? h.Item.Rarity : "Unknown",
+
+                    // 4. Gán PulledAt cho biến Date của DTO
+                    Date = h.PulledAt,
+
+                    // Vì Model GachaHistory không có 2 trường này, ta gán giá trị mặc định để DTO không báo lỗi
+                    IsSuccess = true,
+                    NewUserBalance = 0
                 }).ToListAsync();
 
             return new ServiceResult<List<AdminGachaHistoryDto>>
