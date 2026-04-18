@@ -78,33 +78,40 @@ namespace DataAccess
                 .HasForeignKey(ui => ui.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //GachaBanner - GachaItem
+            // GachaBanner - GachaItem
             modelBuilder.Entity<GachaItem>()
                 .HasOne(gi => gi.GachaBanner)
                 .WithMany(gb => gb.GachaItems)
                 .HasForeignKey(gi => gi.GachaBannerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //Item - GachaItem
+            // Item - GachaItem (chỉ 1 relationship)
             modelBuilder.Entity<GachaItem>()
                 .HasOne(gi => gi.Item)
-                .WithMany(i => i.GachaItems)
+                .WithMany()
                 .HasForeignKey(gi => gi.ItemId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
-            //User - GachaHistory
+            // User - GachaHistory
             modelBuilder.Entity<GachaHistory>()
-                .HasOne(gh => gh.User)
-                .WithMany(u => u.GachaHistories)
+                .HasOne<User>()
+                .WithMany()
                 .HasForeignKey(gh => gh.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
-            //GachaItem - GachaHistory
+            // GachaBanner - GachaHistory
             modelBuilder.Entity<GachaHistory>()
-                .HasOne(gh => gh.GachaItem)
-                .WithMany(gi => gi.GachaHistories)
-                .HasForeignKey(gh => gh.GachaItemId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(gh => gh.GachaBanner)
+                .WithMany()
+                .HasForeignKey(gh => gh.GachaBannerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Item - GachaHistory
+            modelBuilder.Entity<GachaHistory>()
+                .HasOne(gh => gh.Item)
+                .WithMany()
+                .HasForeignKey(gh => gh.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             //User - ShopPurchase
             modelBuilder.Entity<ShopPurchase>()
@@ -127,10 +134,7 @@ namespace DataAccess
                 .HasForeignKey(si => si.ItemId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            //Column types
-            modelBuilder.Entity<GachaHistory>()
-                .Property(gh => gh.NewUserBalance)
-                .HasColumnType("decimal(18,2)");
+           
 
             modelBuilder.Entity<User>()
                 .Property(u => u.CurrencyAmount)
