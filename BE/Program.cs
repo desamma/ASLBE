@@ -4,22 +4,18 @@ using DataAccess;
 using DataAccess.IRepositories;
 using DataAccess.Repositories;
 using DotNetEnv;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PayOS;
 using Services.IServices;
 using Services.Services;
 using System.Text;
 using System.Text.Json;
 using Utilities;
-using PayOS;
-using PayOS.Models;
-using PayOS.Models.V2.PaymentRequests;
-using PayOS.Models.Webhooks;
 
 // Load .env file
 Env.Load();
@@ -44,6 +40,10 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "ashen-light-rpg-firebase-adminsdk-fbsvc-9d6cc98314.json");
+
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
 
 builder.Services.AddSingleton<PayOSClient>(sp =>
 {
