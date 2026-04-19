@@ -624,3 +624,5 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,rider,dotenv,node
 BE/appsettings.json
+BE/ashen-light-rpg-firebase-adminsdk-fbsvc-9d6cc98314.json
+*firebase-adminsdk*.json
