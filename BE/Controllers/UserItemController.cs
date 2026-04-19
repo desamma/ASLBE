@@ -87,5 +87,35 @@ namespace BE.Controllers
 
             return Ok(new { message = result.Message });
         }
+
+        /// <summary>
+        /// Game client polls this to get items not yet delivered.
+        /// </summary>
+        [HttpGet("pending-delivery/{userId}")]
+        public async Task<IActionResult> GetPendingDelivery(Guid userId)
+        {
+            var result = await _userItemService.GetPendingDeliveryAsync(userId);
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(new { message = result.Message, data = result.Data });
+        }
+
+        /// <summary>
+        /// Game client calls this after it has received and applied the items.
+        /// Marks them delivered so they won't be returned again.
+        /// </summary>
+        [HttpPost("acknowledge-delivery/{userId}")]
+        public async Task<IActionResult> AcknowledgeDelivery(Guid userId, [FromBody] AcknowledgeDeliveryRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _userItemService.AcknowledgeDeliveryAsync(userId, request);
+            if (!result.Success)
+                return BadRequest(new { message = result.Message });
+
+            return Ok(new { message = result.Message });
+        }
     }
 }
