@@ -31,17 +31,17 @@ namespace Services.Services
                     return Fail<GachaPullResponseDto>(
                         $"Not enough Gems. Required: {banner.CostPerSinglePull}, Available: {user.CurrencyAmount}");
 
-                // Lấy existing inventory để check IsNew
                 var ownedItemIds = GetOwnedItemIds(userId);
 
-                // Thực hiện 1 pull
                 user.PityCounter++;
                 var (pulledGachaItem, wasPity) = RollSingleItem(gachaItems!, user.PityCounter, banner.HardPityThreshold);
-                if (wasPity) user.PityCounter = 0;
+
+                // ✅ Reset pity khi và chỉ khi ra 5★ (hard pity, soft pity, hay lucky đều reset)
+                if (pulledGachaItem.StarRating == 5)
+                    user.PityCounter = 0;
 
                 var result = BuildResult(pulledGachaItem, wasPity, ownedItemIds, pullNumber: 1);
 
-                // Cập nhật inventory + lịch sử
                 await AddToInventoryAsync(userId, pulledGachaItem.ItemId);
                 await SaveHistoryAsync(userId, banner.Id, pulledGachaItem, wasPity,
                     pullNumber: 1, pitySnapshot: user.PityCounter, "SinglePull", banner.CostPerSinglePull);
@@ -86,7 +86,6 @@ namespace Services.Services
                 var histories = new List<(GachaItem item, bool pity, int pullNum, int pitySnap)>();
 
                 bool hadAnyPity = false;
-                bool guaranteedApplied = false;
 
                 for (int i = 1; i <= banner.MultiPullCount; i++)
                 {
@@ -95,26 +94,33 @@ namespace Services.Services
                     // Pull cuối (pull thứ 10): nếu chưa có 4★+ thì force guarantee
                     bool forceGuarantee = i == banner.MultiPullCount && !HasFourStarOrAbove(results);
 
-                    var (pulledItem, wasPity) = forceGuarantee
-                        ? ForceMinimumRarity(gachaItems!, minStar: 4)
-                        : RollSingleItem(gachaItems!, user.PityCounter, banner.HardPityThreshold);
+                    GachaItem pulledItem;
+                    bool wasPity;
 
-                    bool triggeredPity = wasPity || forceGuarantee;
-                    if (triggeredPity)
+                    if (forceGuarantee)
+                    {
+                        (pulledItem, wasPity) = ForceMinimumRarity(gachaItems!, minStar: 4);
+                    }
+                    else
+                    {
+                        (pulledItem, wasPity) = RollSingleItem(gachaItems!, user.PityCounter, banner.HardPityThreshold);
+                    }
+
+                    // ✅ Reset pity khi và chỉ khi ra 5★
+                    if (pulledItem.StarRating == 5)
                     {
                         user.PityCounter = 0;
                         hadAnyPity = true;
-                        if (forceGuarantee) guaranteedApplied = true;
+                        wasPity = true; // đảm bảo flag nhất quán khi ra 5★ bất kỳ cách nào
                     }
 
-                    var result = BuildResult(pulledItem, triggeredPity, ownedItemIds, pullNumber: i);
+                    var result = BuildResult(pulledItem, wasPity, ownedItemIds, pullNumber: i);
                     results.Add(result);
                     ownedItemIds.Add(pulledItem.ItemId); // mark owned trong batch này
 
-                    histories.Add((pulledItem, triggeredPity, i, user.PityCounter));
+                    histories.Add((pulledItem, wasPity, i, user.PityCounter));
                 }
 
-                // Lưu inventory + lịch sử
                 foreach (var (item, pity, pullNum, pitySnap) in histories)
                 {
                     await AddToInventoryAsync(userId, item.ItemId);
@@ -154,16 +160,15 @@ namespace Services.Services
                 var banner = await _unitOfWork.GachaBanners.FirstOrDefaultAsync(b => b.Id == bannerId);
                 if (banner == null) return Fail<UserGachaStatusDto>("Banner not found");
 
-                // Pulls until 4★ guarantee = PityThreshold - (PityCounter % PityThreshold)
                 int pullsUntil4Star = banner.PityThreshold - (user.PityCounter % banner.PityThreshold);
-                int pullsUntil5Star = banner.HardPityThreshold - user.PityCounter;
+                int pullsUntil5Star = Math.Max(0, banner.HardPityThreshold - user.PityCounter);
 
                 return Ok(new UserGachaStatusDto
                 {
                     CurrentGems = user.CurrencyAmount,
                     PityCounter = user.PityCounter,
                     PullsUntilGuaranteed4Star = pullsUntil4Star,
-                    PullsUntilGuaranteed5Star = Math.Max(0, pullsUntil5Star)
+                    PullsUntilGuaranteed5Star = pullsUntil5Star
                 }, "Status retrieved");
             }
             catch (Exception ex)
@@ -182,7 +187,7 @@ namespace Services.Services
             {
                 var histories = _unitOfWork.GachaHistory
                     .GetQueryable(asNoTracking: true)
-                    .Include(h => h.Item)         
+                    .Include(h => h.Item)
                     .Include(h => h.GachaBanner)
                     .Where(h => h.UserId == userId)
                     .OrderByDescending(h => h.PulledAt)
@@ -258,7 +263,6 @@ namespace Services.Services
                 if (request.StartDate >= request.EndDate)
                     return Fail<GachaBannerDto>("EndDate must be after StartDate");
 
-                // Validate tổng DropRate = 100
                 var totalRate = request.Items.Sum(i => i.DropRate);
                 if (Math.Abs(totalRate - 100.0) > 0.01)
                     return Fail<GachaBannerDto>($"Total drop rate must equal 100%. Current: {totalRate:F2}%");
@@ -405,7 +409,11 @@ namespace Services.Services
         // ROLL ALGORITHM
         // ════════════════════════════════════════════════════
 
-        /// <summary>Roll 1 item theo tỷ lệ, có soft pity và hard pity</summary>
+        /// <summary>
+        /// Roll 1 item theo tỷ lệ, có soft pity và hard pity.
+        /// wasPity = true chỉ khi hard pity kích hoạt.
+        /// Việc reset PityCounter dựa vào StarRating == 5 ở caller, không phải wasPity.
+        /// </summary>
         private (GachaItem item, bool wasPity) RollSingleItem(
             List<GachaItem> items, int pityCounter, int hardPityThreshold)
         {
@@ -442,7 +450,6 @@ namespace Services.Services
             if (!qualified.Any())
                 qualified = items.OrderByDescending(i => i.StarRating).ToList();
 
-            // Weighted random trong nhóm qualified
             double total = qualified.Sum(i => i.DropRate);
             double roll = _rng.NextDouble() * total;
             double cum = 0;
@@ -460,9 +467,8 @@ namespace Services.Services
             if (pityCounter < softPityStart)
                 return items.Select(i => (i, i.DropRate)).ToList();
 
-            // Mỗi pull sau softPityStart tăng 6% tỷ lệ 5★
             double boost = (pityCounter - softPityStart + 1) * 6.0;
-            double extraFor5Star = Math.Min(boost, 50.0); // cap 50% boost
+            double extraFor5Star = Math.Min(boost, 50.0);
 
             return items.Select(i =>
             {
