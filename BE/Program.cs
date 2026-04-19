@@ -112,6 +112,9 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<INPCService, NPCService>();
 builder.Services.AddScoped<IShopPurchaseService, ShopPurchaseService>();
 builder.Services.AddScoped<IFirebaseStorageService, FirebaseStorageService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+builder.Services.AddScoped<IAdminGachaService, AdminGachaService>();
+builder.Services.AddScoped<IAdminPaymentService, AdminPaymentService>();
 //Configure .env config binding
 builder.Configuration["EmailSettings:FromEmail"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMEMAIL");
 builder.Configuration["EmailSettings:FromPassword"] = Environment.GetEnvironmentVariable("EMAILSETTINGS__FROMPASSWORD");

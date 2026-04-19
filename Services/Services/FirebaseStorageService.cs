@@ -160,6 +160,6 @@ public class FirebaseStorageService : IFirebaseStorageService
     /// </summary>
     private string GetPublicUrl(string objectName)
     {
-        return $"https://storage.googleapis.com/{_bucketName}/{Uri.EscapeDataString(objectName)}";
+        return $"https://firebasestorage.googleapis.com/v0/b/{_bucketName}/o/{Uri.EscapeDataString(objectName)}?alt=media";
     }
 }
