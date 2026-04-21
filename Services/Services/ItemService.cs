@@ -35,6 +35,8 @@ namespace Services.Services
                     Type = i.Type,
                     Rarity = i.Rarity,
                     ImagePath = i.ImagePath,
+                    IsGachaOnly = i.IsGachaOnly,
+                    IsActive = i.IsActive,
                     StatsLines = i.StatsLines
                 }).ToList();
 
@@ -84,6 +86,8 @@ namespace Services.Services
                     Type = item.Type,
                     Rarity = item.Rarity,
                     ImagePath = item.ImagePath,
+                    IsGachaOnly = item.IsGachaOnly,
+                    IsActive = item.IsActive,
                     StatsLines = item.StatsLines
                 };
 
@@ -139,6 +143,8 @@ namespace Services.Services
                     Type = request.Type,
                     Rarity = request.Rarity,
                     ImagePath = request.ImagePath,
+                    IsGachaOnly = request.IsGachaOnly,
+                    IsActive = request.IsActive,
                     StatsLines = request.StatsLines ?? new List<string>()
                 };
 
@@ -153,6 +159,8 @@ namespace Services.Services
                     Type = item.Type,
                     Rarity = item.Rarity,
                     ImagePath = item.ImagePath,
+                    IsGachaOnly = item.IsGachaOnly,
+                    IsActive = item.IsActive,
                     StatsLines = item.StatsLines
                 };
 
@@ -224,6 +232,8 @@ namespace Services.Services
                 item.Type = request.Type;
                 item.Rarity = request.Rarity;
                 item.ImagePath = request.ImagePath;
+                item.IsGachaOnly = request.IsGachaOnly;
+                item.IsActive = request.IsActive;
                 item.StatsLines = request.StatsLines ?? new List<string>();
 
                 await _unitOfWork.Items.UpdateAsync(item);
@@ -237,6 +247,8 @@ namespace Services.Services
                     Type = item.Type,
                     Rarity = item.Rarity,
                     ImagePath = item.ImagePath,
+                    IsGachaOnly = item.IsGachaOnly,
+                    IsActive = item.IsActive,
                     StatsLines = item.StatsLines
                 };
 

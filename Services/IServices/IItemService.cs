@@ -1,5 +1,3 @@
-using Services;
-
 namespace Services.IServices
 {
     public interface IItemService
@@ -19,6 +17,8 @@ namespace Services.IServices
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public bool IsGachaOnly { get; set; }
+        public bool IsActive { get; set; }
         public List<string> StatsLines { get; set; } = new List<string>();
     }
 
@@ -29,6 +29,8 @@ namespace Services.IServices
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public bool IsGachaOnly { get; set; } = false;
+        public bool IsActive { get; set; } = true;
         public List<string> StatsLines { get; set; } = new List<string>();
     }
 
@@ -39,6 +41,8 @@ namespace Services.IServices
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public bool IsGachaOnly { get; set; }
+        public bool IsActive { get; set; }
         public List<string> StatsLines { get; set; } = new List<string>();
     }
 }

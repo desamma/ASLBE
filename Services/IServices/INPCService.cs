@@ -1,5 +1,3 @@
-using Services;
-
 namespace Services.IServices
 {
     public interface INPCService
