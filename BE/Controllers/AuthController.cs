@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Services.IServices;
 
 namespace BE.Controllers
@@ -8,10 +9,12 @@ namespace BE.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IConfiguration configuration)
         {
             _authService = authService;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -79,6 +82,37 @@ namespace BE.Controllers
                 Gender = result.Data.Gender
             });
         }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var frontendBaseUrl = _configuration["FrontendUrl"] ?? "https://localhost:7032";
+            var result = await _authService.ForgotPasswordAsync(model.Email, frontendBaseUrl);
+
+            return Ok(new { message = result.Message });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.ResetPasswordAsync(model.UserId, model.Token, model.NewPassword);
+
+            if (!result.Success)
+            {
+                if (result.Message == "User not found")
+                    return NotFound(new { message = result.Message });
+
+                return BadRequest(new { message = result.Message, errors = result.Errors });
+            }
+
+            return Ok(new { message = result.Message });
+        }
     }
 
     public class RegisterRequest
@@ -106,4 +140,17 @@ namespace BE.Controllers
         public decimal CurrencyAmount { get; set; }
         public int Gender { get; set; }
     }
+
+    public class ForgotPasswordRequest
+    {
+        public string Email { get; set; }
+    }
+
+    public class ResetPasswordRequest
+    {
+        public Guid UserId { get; set; }
+        public string Token { get; set; }
+        public string NewPassword { get; set; }
+    }
 }
+
