@@ -1,6 +1,4 @@
-﻿using Services;
-
-namespace Services.IServices
+﻿namespace Services.IServices
 {
     public interface IGameNewsService
     {

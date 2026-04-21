@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Services.IServices;
 
 namespace BE.Controllers;
@@ -9,6 +10,7 @@ namespace BE.Controllers;
 /// </summary>
 [ApiController]
 [Authorize]
+[EnableRateLimiting("PerUserFirebasePolicy")]
 [Route("api/[controller]")]
 public class FirebaseStorageController : ControllerBase
 {

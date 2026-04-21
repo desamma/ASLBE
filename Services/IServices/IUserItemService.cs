@@ -1,5 +1,3 @@
-using Services;
-
 namespace Services.IServices
 {
     public interface IUserItemService
@@ -21,7 +19,7 @@ namespace Services.IServices
 
     public class DeliveryItem
     {
-        public Guid ItemId { get; set; }
+        public string ItemDictionaryKey { get; set; }
         public int Quantity { get; set; }
     }
 
@@ -41,11 +39,15 @@ namespace Services.IServices
     public class IItemServiceItemDto
     {
         public Guid Id { get; set; }
+        public string DictionaryKey { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string Type { get; set; }
         public string Rarity { get; set; }
         public string ImagePath { get; set; }
+        public bool IsGachaOnly { get; set; }
+        public bool IsActive { get; set; }
+        public List<string> StatsLines { get; set; } = new();
     }
 
     public class AddUserItemRequest
