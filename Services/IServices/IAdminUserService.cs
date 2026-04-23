@@ -9,7 +9,5 @@ namespace Services.IServices
         Task<ServiceResult<AdminUserDto>> GetUserByIdAsync(Guid userId);
 
         Task<ServiceResult<bool>> ToggleBanUserAsync(Guid userId);
-
-        Task<ServiceResult<bool>> AdjustUserCurrencyAsync(Guid userId, int amountChange);
     }
 }

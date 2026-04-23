@@ -1,15 +1,12 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BussinessObjects.DTOs.Admin
 {
     public class CreateUpdateItemDto
     {
-        [Required(ErrorMessage = "Tên vật phẩm không được để trống")]
+        [Required(ErrorMessage = "Item name is required")]
         public string Name { get; set; } = string.Empty;
 
         public string Description { get; set; } = string.Empty;
@@ -20,8 +17,11 @@ namespace BussinessObjects.DTOs.Admin
         [Required]
         public string Rarity { get; set; } = string.Empty;
 
-        // Tạm thời nhận đường dẫn ảnh dạng text (Bạn có thể dùng CloudinaryUpload sau nếu cần)
-        public string ImagePath { get; set; } = string.Empty;
+        // Bỏ Required để tránh lỗi Validation khi người dùng chọn Upload File
+        public string? ImagePath { get; set; }
+
+        // Property mới để nhận file ảnh từ giao diện (FE)
+        public IFormFile? ImageFile { get; set; }
 
         public List<string> StatsLines { get; set; } = new List<string>();
     }
