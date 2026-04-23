@@ -1,3 +1,4 @@
+using BussinessObjects.DTOs.GameNews;
 using BussinessObjects.Models;
 using DataAccess.IRepositories;
 using Services.IServices;
