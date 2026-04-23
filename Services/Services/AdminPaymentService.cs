@@ -2,10 +2,8 @@
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Services.IServices;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Services.Services
@@ -19,19 +17,23 @@ namespace Services.Services
             _context = context;
         }
 
-        public async Task<ServiceResult<List<AdminTransactionDto>>> GetAllTransactionsAsync(string? status = null)
+        public async Task<ServiceResult<List<AdminTransactionDto>>> GetAllTransactionsAsync(string? status = null, string? orderCode = null)
         {
             var query = _context.Transactions
                 .Include(t => t.User)
-                .AsNoTracking();
+                .AsNoTracking()
+                .AsQueryable();
 
-            // Nếu truyền status (vd: "Paid") thì lọc theo status
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(t => t.Status.ToLower() == status.ToLower());
             }
 
-            // Sắp xếp giao dịch mới nhất lên đầu
+            if (!string.IsNullOrEmpty(orderCode))
+            {
+                query = query.Where(t => t.OrderCode.ToString().Contains(orderCode));
+            }
+
             var transactions = await query.OrderByDescending(t => t.CreatedAt)
                 .Select(t => new AdminTransactionDto
                 {
@@ -52,23 +54,38 @@ namespace Services.Services
             {
                 Success = true,
                 Data = transactions,
-                Message = "Lấy danh sách giao dịch thành công"
+                Message = "Successfully retrieved transactions."
             };
         }
 
-        public async Task<ServiceResult<List<AdminShopPurchaseDto>>> GetAllShopPurchasesAsync()
+        public async Task<ServiceResult<List<AdminShopPurchaseDto>>> GetAllShopPurchasesAsync(string? searchName = null, int? quantity = null)
         {
-            var purchases = await _context.ShopPurchases
+            var query = _context.ShopPurchases
                 .Include(sp => sp.User)
                 .Include(sp => sp.ShopItem)
                 .AsNoTracking()
-                .OrderByDescending(sp => sp.PurchaseDate)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchName))
+            {
+                query = query.Where(sp =>
+                    (sp.User != null && sp.User.UserName.Contains(searchName)) ||
+                    (sp.ShopItem != null && sp.ShopItem.Name.Contains(searchName)));
+            }
+
+            // ĐÃ XÓA ĐOẠN FILTER THEO TYPE Ở ĐÂY ĐỂ TRÁNH LỖI CS1061
+
+            if (quantity.HasValue)
+            {
+                query = query.Where(sp => sp.Quantity == quantity.Value);
+            }
+
+            var purchases = await query.OrderByDescending(sp => sp.PurchaseDate)
                 .Select(sp => new AdminShopPurchaseDto
                 {
                     Id = sp.Id,
                     UserId = sp.UserId,
                     UserName = sp.User != null ? sp.User.UserName : "Unknown",
-                    // Giả định ShopItem có trường Name. Nếu là ItemName thì đổi thành sp.ShopItem.ItemName
                     ShopItemName = sp.ShopItem != null ? sp.ShopItem.Name : "Unknown Item",
                     Quantity = sp.Quantity,
                     PaymentType = sp.PaymentType,
@@ -80,7 +97,7 @@ namespace Services.Services
             {
                 Success = true,
                 Data = purchases,
-                Message = "Lấy lịch sử mua hàng trong Shop thành công"
+                Message = "Successfully retrieved shop purchase history."
             };
         }
     }

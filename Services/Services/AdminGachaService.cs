@@ -1,12 +1,13 @@
 ﻿using BussinessObjects.DTOs.Admin;
 using BussinessObjects.Models;
 using DataAccess;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Services.IServices;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Services.Services
@@ -14,10 +15,13 @@ namespace Services.Services
     public class AdminGachaService : IAdminGachaService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public AdminGachaService(ApplicationDbContext context)
+        // Inject IWebHostEnvironment vào Constructor
+        public AdminGachaService(ApplicationDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         public async Task<ServiceResult<List<AdminGachaHistoryDto>>> GetGachaHistoryAsync(Guid? userId = null)
@@ -38,12 +42,9 @@ namespace Services.Services
                     Id = h.Id,
                     UserId = h.UserId,
                     UserName = h.User != null ? h.User.UserName : "Unknown",
-
                     ItemName = h.Item != null ? h.Item.Name : "Unknown Item",
                     ItemRarity = h.Item != null ? h.Item.Rarity : "Unknown",
-
                     Date = h.PulledAt,
-
                     IsSuccess = true,
                     NewUserBalance = 0
                 }).ToListAsync();
@@ -52,7 +53,7 @@ namespace Services.Services
             {
                 Success = true,
                 Data = history,
-                Message = "Lấy lịch sử Gacha thành công"
+                Message = "Successfully retrieved Gacha history."
             };
         }
 
@@ -74,20 +75,41 @@ namespace Services.Services
             {
                 Success = true,
                 Data = items,
-                Message = "Lấy danh sách vật phẩm thành công"
+                Message = "Successfully retrieved item list."
             };
         }
 
         public async Task<ServiceResult<AdminItemDto>> CreateItemAsync(CreateUpdateItemDto dto)
         {
+            string finalImagePath = dto.ImagePath ?? string.Empty;
+
+            // XỬ LÝ LƯU ẢNH LOCAL NẾU CÓ FILE ĐƯỢC UPLOAD
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                // Tạo tên file độc nhất để tránh trùng lặp
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + dto.ImageFile.FileName;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await dto.ImageFile.CopyToAsync(fileStream);
+                }
+
+                // Lưu đường dẫn tương đối vào Database
+                finalImagePath = "/images/" + uniqueFileName;
+            }
+
             var newItem = new Item
             {
-                Id = Guid.NewGuid(), 
+                Id = Guid.NewGuid(),
                 Name = dto.Name,
                 Description = dto.Description,
                 Type = dto.Type,
                 Rarity = dto.Rarity,
-                ImagePath = dto.ImagePath,
+                ImagePath = finalImagePath,
                 StatsLines = dto.StatsLines ?? new List<string>()
             };
 
@@ -105,7 +127,7 @@ namespace Services.Services
                 StatsLines = newItem.StatsLines
             };
 
-            return new ServiceResult<AdminItemDto> { Success = true, Data = resultDto, Message = "Tạo vật phẩm thành công." };
+            return new ServiceResult<AdminItemDto> { Success = true, Data = resultDto, Message = "Item created successfully." };
         }
 
         public async Task<ServiceResult<AdminItemDto>> UpdateItemAsync(Guid itemId, CreateUpdateItemDto dto)
@@ -113,14 +135,36 @@ namespace Services.Services
             var item = await _context.Items.FindAsync(itemId);
             if (item == null)
             {
-                return new ServiceResult<AdminItemDto> { Success = false, Message = "Không tìm thấy vật phẩm này." };
+                return new ServiceResult<AdminItemDto> { Success = false, Message = "Item not found." };
+            }
+
+            // XỬ LÝ LƯU ẢNH LOCAL NẾU CÓ FILE MỚI ĐƯỢC UPLOAD
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + dto.ImageFile.FileName;
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await dto.ImageFile.CopyToAsync(fileStream);
+                }
+
+                // Cập nhật link ảnh mới
+                item.ImagePath = "/images/" + uniqueFileName;
+            }
+            else if (!string.IsNullOrEmpty(dto.ImagePath))
+            {
+                // Nếu không upload file mới mà truyền link thì dùng link đó
+                item.ImagePath = dto.ImagePath;
             }
 
             item.Name = dto.Name;
             item.Description = dto.Description;
             item.Type = dto.Type;
             item.Rarity = dto.Rarity;
-            item.ImagePath = dto.ImagePath;
             item.StatsLines = dto.StatsLines ?? new List<string>();
 
             _context.Items.Update(item);
@@ -137,7 +181,7 @@ namespace Services.Services
                 StatsLines = item.StatsLines
             };
 
-            return new ServiceResult<AdminItemDto> { Success = true, Data = resultDto, Message = "Cập nhật vật phẩm thành công." };
+            return new ServiceResult<AdminItemDto> { Success = true, Data = resultDto, Message = "Item updated successfully." };
         }
     }
 }
