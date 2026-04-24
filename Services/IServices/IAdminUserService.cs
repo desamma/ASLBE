@@ -1,9 +1,4 @@
 ﻿using BussinessObjects.DTOs.Admin;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Services.IServices
 {
@@ -14,7 +9,5 @@ namespace Services.IServices
         Task<ServiceResult<AdminUserDto>> GetUserByIdAsync(Guid userId);
 
         Task<ServiceResult<bool>> ToggleBanUserAsync(Guid userId);
-
-        Task<ServiceResult<bool>> AdjustUserCurrencyAsync(Guid userId, int amountChange);
     }
 }

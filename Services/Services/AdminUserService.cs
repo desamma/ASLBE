@@ -6,7 +6,6 @@ using Services.IServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Services.Services
@@ -36,7 +35,6 @@ namespace Services.Services
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 CurrencyAmount = u.CurrencyAmount,
-                PityCounter = u.PityCounter,
                 IsBanned = u.IsBanned,
                 CreatedDate = u.CreatedDate
             }).ToListAsync();
@@ -45,7 +43,7 @@ namespace Services.Services
             {
                 Success = true,
                 Data = users,
-                Message = "Lấy danh sách thành công"
+                Message = "Successfully retrieved user list."
             };
         }
 
@@ -54,7 +52,7 @@ namespace Services.Services
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
-                return new ServiceResult<AdminUserDto> { Success = false, Message = "Không tìm thấy người dùng." };
+                return new ServiceResult<AdminUserDto> { Success = false, Message = "User not found." };
             }
 
             var userDto = new AdminUserDto
@@ -64,7 +62,6 @@ namespace Services.Services
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 CurrencyAmount = user.CurrencyAmount,
-                PityCounter = user.PityCounter,
                 IsBanned = user.IsBanned,
                 CreatedDate = user.CreatedDate
             };
@@ -77,7 +74,7 @@ namespace Services.Services
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
             {
-                return new ServiceResult<bool> { Success = false, Message = "Không tìm thấy người dùng." };
+                return new ServiceResult<bool> { Success = false, Message = "User not found." };
             }
 
             user.IsBanned = !user.IsBanned;
@@ -85,38 +82,11 @@ namespace Services.Services
 
             if (result.Succeeded)
             {
-                string status = user.IsBanned ? "đã bị khóa" : "đã được mở khóa";
-                return new ServiceResult<bool> { Success = true, Data = true, Message = $"Tài khoản {user.UserName} {status}." };
+                string status = user.IsBanned ? "has been banned" : "has been unbanned";
+                return new ServiceResult<bool> { Success = true, Data = true, Message = $"Account {user.UserName} {status}." };
             }
 
-            return new ServiceResult<bool> { Success = false, Message = "Có lỗi xảy ra khi cập nhật trạng thái." };
-        }
-
-        public async Task<ServiceResult<bool>> AdjustUserCurrencyAsync(Guid userId, int amountChange)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-            {
-                return new ServiceResult<bool> { Success = false, Message = "Không tìm thấy người dùng." };
-            }
-
-            if (user.CurrencyAmount + amountChange < 0)
-            {
-                user.CurrencyAmount = 0;
-            }
-            else
-            {
-                user.CurrencyAmount += amountChange;
-            }
-
-            var result = await _userManager.UpdateAsync(user);
-
-            if (result.Succeeded)
-            {
-                return new ServiceResult<bool> { Success = true, Data = true, Message = $"Đã cập nhật số dư của {user.UserName} thành {user.CurrencyAmount}." };
-            }
-
-            return new ServiceResult<bool> { Success = false, Message = "Có lỗi xảy ra khi cập nhật số dư." };
+            return new ServiceResult<bool> { Success = false, Message = "An error occurred while updating the account status." };
         }
     }
 }
