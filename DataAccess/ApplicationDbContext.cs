@@ -21,6 +21,7 @@ namespace DataAccess
         public virtual DbSet<ShopItem> ShopItems { get; set; }
         public virtual DbSet<ShopPurchase> ShopPurchases { get; set; }
         public virtual DbSet<NPC> NPCs { get; set; }
+        public virtual DbSet<BugReport> BugReports { get; set; }
 
         // THÊM BẢNG LƯU SETTING API
         public virtual DbSet<ApiSetting> ApiSettings { get; set; }
@@ -141,7 +142,15 @@ namespace DataAccess
                 .HasForeignKey(si => si.ItemId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Column types
+            //User - BugReport
+            modelBuilder.Entity<BugReport>()
+                .HasOne(br => br.User)
+                .WithMany()
+                .HasForeignKey(br => br.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+           
+
             modelBuilder.Entity<User>()
                 .Property(u => u.CurrencyAmount)
                 .HasColumnType("decimal(18,2)");
