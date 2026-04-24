@@ -86,7 +86,10 @@ namespace Services.Services
             // XỬ LÝ LƯU ẢNH LOCAL NẾU CÓ FILE ĐƯỢC UPLOAD
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
+                // FIX LỖI NULL: Tự động trỏ về thư mục gốc + wwwroot nếu WebRootPath bị null
+                string webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+                var uploadsFolder = Path.Combine(webRootPath, "images");
+
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
                 // Tạo tên file độc nhất để tránh trùng lặp
@@ -141,7 +144,10 @@ namespace Services.Services
             // XỬ LÝ LƯU ẢNH LOCAL NẾU CÓ FILE MỚI ĐƯỢC UPLOAD
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
-                var uploadsFolder = Path.Combine(_env.WebRootPath, "images");
+                // FIX LỖI NULL: Tự động trỏ về thư mục gốc + wwwroot nếu WebRootPath bị null
+                string webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+                var uploadsFolder = Path.Combine(webRootPath, "images");
+
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
                 var uniqueFileName = Guid.NewGuid().ToString() + "_" + dto.ImageFile.FileName;

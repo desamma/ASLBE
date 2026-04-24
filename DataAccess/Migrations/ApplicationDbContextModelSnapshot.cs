@@ -28,21 +28,46 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("BannerEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("BannerPath")
+                    b.Property<string>("BannerImagePath")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("BannerStartDate")
+                    b.Property<int>("CostPerMultiPull")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CostPerSinglePull")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("RollCost")
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("HardPityThreshold")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MultiPullCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PityThreshold")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -55,26 +80,53 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("GachaItemId")
+                    b.Property<Guid>("GachaBannerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsSuccess")
+                    b.Property<int>("GemsCost")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("NewUserBalance")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PityCounterSnapshot")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PullNumberInSession")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PullType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("PulledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StarRating")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("WasPityTriggered")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("GachaItemId");
+                    b.HasIndex("GachaBannerId");
+
+                    b.HasIndex("ItemId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("GachaHistory", (string)null);
                 });
@@ -85,17 +137,25 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<double>("DropRate")
+                        .HasColumnType("float");
+
                     b.Property<Guid>("GachaBannerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<double>("GachaRate")
-                        .HasColumnType("float");
-
-                    b.Property<bool>("IsFeaturedItem")
+                    b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
+
+                    b.Property<string>("ItemCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StarRating")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -155,9 +215,19 @@ namespace DataAccess.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("DictionaryKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ImagePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsGachaOnly")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -196,8 +266,7 @@ namespace DataAccess.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImagePath")
                         .IsRequired()
@@ -375,6 +444,9 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OrderCode")
+                        .IsUnique();
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Transactions");
@@ -487,7 +559,19 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredToGameAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeliveredToGame")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityDelivered")
                         .HasColumnType("int");
 
                     b.HasKey("UserId", "ItemId");
@@ -630,19 +714,31 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BussinessObjects.Models.GachaHistory", b =>
                 {
-                    b.HasOne("BussinessObjects.Models.GachaItem", "GachaItem")
-                        .WithMany("GachaHistories")
-                        .HasForeignKey("GachaItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("BussinessObjects.Models.GachaBanner", "GachaBanner")
+                        .WithMany()
+                        .HasForeignKey("GachaBannerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BussinessObjects.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BussinessObjects.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("BussinessObjects.Models.User", "User")
-                        .WithMany("GachaHistories")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("UserId1");
 
-                    b.Navigation("GachaItem");
+                    b.Navigation("GachaBanner");
+
+                    b.Navigation("Item");
 
                     b.Navigation("User");
                 });
@@ -656,9 +752,9 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.HasOne("BussinessObjects.Models.Item", "Item")
-                        .WithMany("GachaItems")
+                        .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("GachaBanner");
@@ -781,15 +877,8 @@ namespace DataAccess.Migrations
                     b.Navigation("GachaItems");
                 });
 
-            modelBuilder.Entity("BussinessObjects.Models.GachaItem", b =>
-                {
-                    b.Navigation("GachaHistories");
-                });
-
             modelBuilder.Entity("BussinessObjects.Models.Item", b =>
                 {
-                    b.Navigation("GachaItems");
-
                     b.Navigation("UserItems");
                 });
 
@@ -800,8 +889,6 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BussinessObjects.Models.User", b =>
                 {
-                    b.Navigation("GachaHistories");
-
                     b.Navigation("ShopPurchases");
 
                     b.Navigation("Transactions");
