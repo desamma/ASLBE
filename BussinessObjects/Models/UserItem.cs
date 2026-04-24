@@ -16,5 +16,13 @@ namespace BussinessObjects.Models
         [Required]
         [Range(0, int.MaxValue)]
         public int Quantity { get; set; }
+
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int QuantityDelivered { get; set; } = 0;
+
+        public bool IsDeliveredToGame { get; set; } = false;
+        public DateTime? DeliveredToGameAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -1,3 +1,4 @@
+using BussinessObjects.DTOs.NPC;
 using BussinessObjects.Models;
 using DataAccess.IRepositories;
 using Services.IServices;

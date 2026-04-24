@@ -6,6 +6,9 @@ namespace BussinessObjects.Models
     {
         public Guid Id { get; set; }
 
+        [Required]
+        public string DictionaryKey { get; set; } = string.Empty;
+
         [MaxLength(50)]
         [Required]
         public string Name { get; set; } = string.Empty;
@@ -24,6 +27,10 @@ namespace BussinessObjects.Models
 
         [Required]
         public string ImagePath { get; set; } = string.Empty;
+
+        public bool IsGachaOnly { get; set; } = false;
+
+        public bool IsActive { get; set; } = true;
 
         public List<string> StatsLines { get; set; } = new List<string>();
 
