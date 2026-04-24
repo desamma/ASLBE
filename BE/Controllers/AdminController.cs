@@ -113,21 +113,24 @@ namespace BE.Controllers
 
         #region --- QUẢN LÝ CẤU HÌNH API (SETTINGS) ---
 
-        // GET: api/admin/settings/api-keys
         [HttpGet("settings/api-keys")]
         public async Task<IActionResult> GetApiSettings()
         {
-            var result = await _adminSettingService.GetApiSettingAsync();
+            var result = await _adminSettingService.GetAllApiSettingsAsync();
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // PUT: api/admin/settings/api-keys
-        [HttpPut("settings/api-keys")]
-        public async Task<IActionResult> UpdateApiSettings([FromBody] ApiSettingDto request)
+        [HttpPost("settings/api-keys")]
+        public async Task<IActionResult> CreateApiSettings([FromBody] ApiSettingDto request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var result = await _adminSettingService.CreateApiSettingAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
 
-            var result = await _adminSettingService.UpdateApiSettingAsync(request);
+        [HttpDelete("settings/api-keys/{id}")]
+        public async Task<IActionResult> DeleteApiSetting(Guid id)
+        {
+            var result = await _adminSettingService.DeleteApiSettingAsync(id);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
