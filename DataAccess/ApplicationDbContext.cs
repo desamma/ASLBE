@@ -94,8 +94,8 @@ namespace DataAccess
 
             // User - GachaHistory
             modelBuilder.Entity<GachaHistory>()
-                .HasOne<User>()
-                .WithMany()
+                .HasOne(gh => gh.User)
+                .WithMany(u => u.GachaHistories)
                 .HasForeignKey(gh => gh.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
