@@ -10,7 +10,6 @@ namespace BussinessObjects.Models
         // ✅ ADD THIS - User Reference
         [Required]
         public Guid UserId { get; set; }
-        [ForeignKey("UserId")]
         public virtual User? User { get; set; }
 
         [Required]
