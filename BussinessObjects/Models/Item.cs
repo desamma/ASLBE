@@ -28,9 +28,9 @@ namespace BussinessObjects.Models
         [Required]
         public string ImagePath { get; set; } = string.Empty;
 
-        public bool IsGachaOnly { get; set; } = false;
+        public bool? IsGachaOnly { get; set; } = false;
 
-        public bool IsActive { get; set; } = true;
+        public bool? IsActive { get; set; } = true;
 
         public List<string> StatsLines { get; set; } = new List<string>();
 

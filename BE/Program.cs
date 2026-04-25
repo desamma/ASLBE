@@ -4,7 +4,9 @@ using DataAccess;
 using DataAccess.IRepositories;
 using DataAccess.Repositories;
 using DotNetEnv;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.OData;
@@ -18,6 +20,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using Utilities;
+using FirebaseAdmin;
 
 // Load .env file
 Env.Load();
@@ -25,8 +28,11 @@ Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 //Configure Identity
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is not set.")));
 
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
@@ -43,16 +49,27 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "ashen-light-rpg-firebase-adminsdk-fbsvc-9d6cc98314.json");
+//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "ashen-light-rpg-firebase-adminsdk-fbsvc-9d6cc98314.json");
 
-Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
+//Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", null);
+
+var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON")
+    ?? throw new InvalidOperationException("FIREBASE_CREDENTIALS_JSON is not set.");
+
+FirebaseApp.Create(new AppOptions
+{
+    Credential = GoogleCredential.FromJson(firebaseJson)
+});
 
 builder.Services.AddSingleton<PayOSClient>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
-    string clientId = config["PayOS:ClientId"] ?? throw new InvalidOperationException("PayOS:ClientId missing");
-    string apiKey = config["PayOS:ApiKey"] ?? throw new InvalidOperationException("PayOS:ApiKey missing");
-    string checksumKey = config["PayOS:ChecksumKey"] ?? throw new InvalidOperationException("PayOS:ChecksumKey missing");
+    //string clientId = config["PayOS:ClientId"] ?? throw new InvalidOperationException("PayOS:ClientId missing");
+    string clientId = Environment.GetEnvironmentVariable("PayOS__ClientId") ?? throw new InvalidOperationException("PayOS:ClientId missing");
+    //string apiKey = config["PayOS:ApiKey"] ?? throw new InvalidOperationException("PayOS:ApiKey missing");
+    string apiKey = Environment.GetEnvironmentVariable("PayOS__ApiKey") ?? throw new InvalidOperationException("PayOS:ApiKey missing");
+    //string checksumKey = config["PayOS:ChecksumKey"] ?? throw new InvalidOperationException("PayOS:ChecksumKey missing");
+    string checksumKey = Environment.GetEnvironmentVariable("PayOS__ChecksumKey") ?? throw new InvalidOperationException("PayOS:ChecksumKey missing");
 
     return new PayOSClient(clientId, apiKey, checksumKey);
 });
@@ -240,6 +257,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
