@@ -9,7 +9,8 @@ namespace Services.IServices
 {
     public interface IAdminSettingService
     {
-        Task<ServiceResult<ApiSettingDto>> GetApiSettingAsync();
-        Task<ServiceResult<ApiSettingDto>> UpdateApiSettingAsync(ApiSettingDto dto);
+        Task<ServiceResult<List<ApiSettingDto>>> GetAllApiSettingsAsync();
+        Task<ServiceResult<ApiSettingDto>> CreateApiSettingAsync(ApiSettingDto dto);
+        Task<ServiceResult<bool>> DeleteApiSettingAsync(Guid id);
     }
 }

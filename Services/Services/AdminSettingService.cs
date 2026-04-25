@@ -6,7 +6,6 @@ using Services.IServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Services.Services
@@ -20,59 +19,50 @@ namespace Services.Services
             _context = context;
         }
 
-        public async Task<ServiceResult<ApiSettingDto>> GetApiSettingAsync()
+        public async Task<ServiceResult<List<ApiSettingDto>>> GetAllApiSettingsAsync()
         {
-            // Lấy dòng config đầu tiên trong DB (vì ta chỉ cần 1 dòng duy nhất để lưu cấu hình)
-            var setting = await _context.ApiSettings.FirstOrDefaultAsync();
-            if (setting == null)
-            {
-                return new ServiceResult<ApiSettingDto> { Success = true, Data = new ApiSettingDto() };
-            }
-
-            return new ServiceResult<ApiSettingDto>
-            {
-                Success = true,
-                Data = new ApiSettingDto
+            var settings = await _context.ApiSettings
+                .OrderByDescending(s => s.UpdatedAt)
+                .Select(s => new ApiSettingDto
                 {
-                    GeminiApiKey = setting.GeminiApiKey,
-                    ColabApiUrl = setting.ColabApiUrl
-                }
-            };
+                    Id = s.Id,
+                    GeminiApiKey = s.GeminiApiKey,
+                    ColabApiUrl = s.ColabApiUrl,
+                    UpdatedAt = s.UpdatedAt
+                }).ToListAsync();
+
+            return new ServiceResult<List<ApiSettingDto>> { Success = true, Data = settings };
         }
 
-        public async Task<ServiceResult<ApiSettingDto>> UpdateApiSettingAsync(ApiSettingDto dto)
+        public async Task<ServiceResult<ApiSettingDto>> CreateApiSettingAsync(ApiSettingDto dto)
         {
-            var setting = await _context.ApiSettings.FirstOrDefaultAsync();
-
-            if (setting == null)
+            var newSetting = new ApiSetting
             {
-                // Nếu chưa có thì tạo mới
-                setting = new ApiSetting
-                {
-                    Id = Guid.NewGuid(),
-                    GeminiApiKey = dto.GeminiApiKey,
-                    ColabApiUrl = dto.ColabApiUrl,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.ApiSettings.Add(setting);
-            }
-            else
-            {
-                // Nếu có rồi thì cập nhật
-                setting.GeminiApiKey = dto.GeminiApiKey;
-                setting.ColabApiUrl = dto.ColabApiUrl;
-                setting.UpdatedAt = DateTime.UtcNow;
-                _context.ApiSettings.Update(setting);
-            }
+                Id = Guid.NewGuid(),
+                GeminiApiKey = dto.GeminiApiKey,
+                ColabApiUrl = dto.ColabApiUrl,
+                UpdatedAt = DateTime.UtcNow
+            };
 
+            _context.ApiSettings.Add(newSetting);
             await _context.SaveChangesAsync();
 
-            return new ServiceResult<ApiSettingDto>
+            dto.Id = newSetting.Id;
+            dto.UpdatedAt = newSetting.UpdatedAt;
+
+            return new ServiceResult<ApiSettingDto> { Success = true, Message = "Thêm cấu hình API thành công!", Data = dto };
+        }
+
+        public async Task<ServiceResult<bool>> DeleteApiSettingAsync(Guid id)
+        {
+            var setting = await _context.ApiSettings.FindAsync(id);
+            if (setting != null)
             {
-                Success = true,
-                Message = "Lưu API Key thành công!",
-                Data = dto
-            };
+                _context.ApiSettings.Remove(setting);
+                await _context.SaveChangesAsync();
+                return new ServiceResult<bool> { Success = true, Message = "Xóa API thành công!" };
+            }
+            return new ServiceResult<bool> { Success = false, Message = "Không tìm thấy API!" };
         }
     }
 }
