@@ -16,20 +16,24 @@ namespace BE.Controllers
         private readonly IAdminGachaService _adminGachaService;
         private readonly IAdminPaymentService _adminPaymentService;
         private readonly IAdminUserService _adminUserService;
+        // 1. Khai báo Setting Service
+        private readonly IAdminSettingService _adminSettingService;
 
+        // 2. Inject vào Constructor
         public AdminController(
             IAdminGachaService adminGachaService,
             IAdminPaymentService adminPaymentService,
-            IAdminUserService adminUserService)
+            IAdminUserService adminUserService,
+            IAdminSettingService adminSettingService)
         {
             _adminGachaService = adminGachaService;
             _adminPaymentService = adminPaymentService;
             _adminUserService = adminUserService;
+            _adminSettingService = adminSettingService;
         }
 
         #region --- QUẢN LÝ NGƯỜI DÙNG (USERS) ---
 
-        // GET: api/admin/users?searchName=abc
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers([FromQuery] string? searchName)
         {
@@ -37,7 +41,6 @@ namespace BE.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // GET: api/admin/users/{id}
         [HttpGet("users/{id}")]
         public async Task<IActionResult> GetUserById(Guid id)
         {
@@ -45,7 +48,6 @@ namespace BE.Controllers
             return result.Success ? Ok(result) : NotFound(result);
         }
 
-        // PUT: api/admin/users/{id}/toggle-ban
         [HttpPut("users/{id}/toggle-ban")]
         public async Task<IActionResult> ToggleBanUser(Guid id)
         {
@@ -53,13 +55,10 @@ namespace BE.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // ĐÃ XÓA BỎ API AdjustUserCurrency Ở ĐÂY THEO YÊU CẦU
-
         #endregion
 
         #region --- QUẢN LÝ GACHA / ITEMS ---
 
-        // GET: api/admin/gacha/history?userId={id}
         [HttpGet("gacha/history")]
         public async Task<IActionResult> GetGachaHistory([FromQuery] Guid? userId)
         {
@@ -67,7 +66,6 @@ namespace BE.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // GET: api/admin/gacha/items
         [HttpGet("gacha/items")]
         public async Task<IActionResult> GetAllItems()
         {
@@ -75,9 +73,8 @@ namespace BE.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // POST: api/admin/gacha/items
         [HttpPost("gacha/items")]
-        public async Task<IActionResult> CreateItem([FromForm] CreateUpdateItemDto request) // Đã đổi sang FromForm
+        public async Task<IActionResult> CreateItem([FromForm] CreateUpdateItemDto request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -85,9 +82,8 @@ namespace BE.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // PUT: api/admin/gacha/items/{id}
         [HttpPut("gacha/items/{id}")]
-        public async Task<IActionResult> UpdateItem(Guid id, [FromForm] CreateUpdateItemDto request) // Đã đổi sang FromForm
+        public async Task<IActionResult> UpdateItem(Guid id, [FromForm] CreateUpdateItemDto request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -99,21 +95,42 @@ namespace BE.Controllers
 
         #region --- QUẢN LÝ GIAO DỊCH VÀ CỬA HÀNG (PAYMENTS) ---
 
-        // GET: api/admin/payments/transactions?status=Paid&orderCode=123
         [HttpGet("payments/transactions")]
         public async Task<IActionResult> GetAllTransactions([FromQuery] string? status, [FromQuery] string? orderCode)
         {
-            // Đã cập nhật truyền thêm orderCode
             var result = await _adminPaymentService.GetAllTransactionsAsync(status, orderCode);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        // GET: api/admin/payments/shop-purchases?searchName=abc&quantity=2
         [HttpGet("payments/shop-purchases")]
         public async Task<IActionResult> GetAllShopPurchases([FromQuery] string? searchName, [FromQuery] int? quantity)
         {
-            // Đã cập nhật truyền thêm searchName và quantity
             var result = await _adminPaymentService.GetAllShopPurchasesAsync(searchName, quantity);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        #endregion
+
+        #region --- QUẢN LÝ CẤU HÌNH API (SETTINGS) ---
+
+        [HttpGet("settings/api-keys")]
+        public async Task<IActionResult> GetApiSettings()
+        {
+            var result = await _adminSettingService.GetAllApiSettingsAsync();
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("settings/api-keys")]
+        public async Task<IActionResult> CreateApiSettings([FromBody] ApiSettingDto request)
+        {
+            var result = await _adminSettingService.CreateApiSettingAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpDelete("settings/api-keys/{id}")]
+        public async Task<IActionResult> DeleteApiSetting(Guid id)
+        {
+            var result = await _adminSettingService.DeleteApiSettingAsync(id);
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
