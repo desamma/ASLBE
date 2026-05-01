@@ -123,7 +123,6 @@ namespace Services.Services
                     UserName = user?.UserName,
                     CreatedDate = bugReport.CreatedDate,
                     UpdatedDate = bugReport.UpdatedDate,
-                    AdminNotes = bugReport.AdminNotes
                 };
 
                 return new ServiceResult<BugReportDto>
@@ -186,7 +185,6 @@ namespace Services.Services
                         UserName = user?.UserName,
                         CreatedDate = br.CreatedDate,
                         UpdatedDate = br.UpdatedDate,
-                        AdminNotes = br.AdminNotes
                     };
                 }).ToList();
 
@@ -249,7 +247,6 @@ namespace Services.Services
                         UserName = user?.UserName,
                         CreatedDate = br.CreatedDate,
                         UpdatedDate = br.UpdatedDate,
-                        AdminNotes = br.AdminNotes
                     };
                 }).ToList();
 
@@ -299,7 +296,6 @@ namespace Services.Services
                     };
 
                 bugReport.Status = request.Status;
-                bugReport.AdminNotes = request.AdminNotes;
                 bugReport.UpdatedDate = DateTime.UtcNow;
 
                 await _unitOfWork.BugReports.UpdateAsync(bugReport);
