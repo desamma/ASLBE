@@ -24,12 +24,10 @@ namespace BussinessObjects.DTOs.BugReport
         public string UserName { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
-        public string AdminNotes { get; set; }
     }
 
     public class UpdateBugReportStatusRequest
     {
         public string Status { get; set; }
-        public string AdminNotes { get; set; }
     }
 }
