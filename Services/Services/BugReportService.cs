@@ -143,69 +143,6 @@ namespace Services.Services
             }
         }
 
-        public async Task<ServiceResult<List<BugReportDto>>> GetUserBugReportsAsync(Guid userId)
-        {
-            try
-            {
-                var bugReports = _unitOfWork.BugReports
-                    .GetQueryable(asNoTracking: true)
-                    .Where(br => br.UserId == userId)
-                    .OrderByDescending(br => br.CreatedDate)
-                    .ToList();
-
-                if (!bugReports.Any())
-                    return new ServiceResult<List<BugReportDto>>
-                    {
-                        Success = true,
-                        Message = "No bug reports found",
-                        Data = new List<BugReportDto>()
-                    };
-
-                // Get all users in one query for efficiency
-                var userIds = bugReports.Select(br => br.UserId).Distinct().ToList();
-                var users = _unitOfWork.Users
-                    .GetQueryable(asNoTracking: true)
-                    .Where(u => userIds.Contains(u.Id))
-                    .ToList();
-
-                var dtoList = bugReports.Select(br =>
-                {
-                    var user = users.FirstOrDefault(u => u.Id == br.UserId);
-                    return new BugReportDto
-                    {
-                        Id = br.Id,
-                        Title = br.Title,
-                        Description = br.Description,
-                        Steps = br.Steps,
-                        ExpectedBehavior = br.ExpectedBehavior,
-                        ActualBehavior = br.ActualBehavior,
-                        Severity = br.Severity,
-                        Status = br.Status,
-                        UserId = br.UserId,
-                        UserName = user?.UserName,
-                        CreatedDate = br.CreatedDate,
-                        UpdatedDate = br.UpdatedDate,
-                    };
-                }).ToList();
-
-                return new ServiceResult<List<BugReportDto>>
-                {
-                    Success = true,
-                    Message = "User bug reports retrieved successfully",
-                    Data = dtoList
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ServiceResult<List<BugReportDto>>
-                {
-                    Success = false,
-                    Message = "Error retrieving user bug reports",
-                    Errors = [ex.Message]
-                };
-            }
-        }
-
         public async Task<ServiceResult<List<BugReportDto>>> GetAllBugReportsAsync()
         {
             try

@@ -60,23 +60,8 @@ namespace BE.Controllers
             return Ok(result.Data);
         }
 
-        [HttpGet("user/all")]
-        public async Task<IActionResult> GetUserBugReports()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaim?.Value, out var userId))
-                return Unauthorized();
-
-            var result = await _bugReportService.GetUserBugReportsAsync(userId);
-
-            if (!result.Success)
-                return BadRequest(new { message = result.Message, errors = result.Errors });
-
-            return Ok(result.Data);
-        }
-
         [HttpGet("admin/all")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> GetAllBugReports()
         {
             var result = await _bugReportService.GetAllBugReportsAsync();
@@ -88,7 +73,7 @@ namespace BE.Controllers
         }
 
         [HttpPut("{id}/status")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> UpdateBugReportStatus(Guid id, [FromBody] UpdateBugReportStatusRequest model)
         {
             if (!ModelState.IsValid)
@@ -103,6 +88,7 @@ namespace BE.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteBugReport(Guid id)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
