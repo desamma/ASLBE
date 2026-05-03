@@ -1,6 +1,8 @@
 ﻿using BussinessObjects.DTOs.Gacha;
 using BussinessObjects.Models;
 using DataAccess.IRepositories;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Services.IServices;
 
@@ -10,10 +12,12 @@ namespace Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly Random _rng = new();
+        private readonly IWebHostEnvironment _env;
 
-        public GachaService(IUnitOfWork unitOfWork)
+        public GachaService(IUnitOfWork unitOfWork, IWebHostEnvironment env)
         {
             _unitOfWork = unitOfWork;
+            _env = env;
         }
 
         // ════════════════════════════════════════════════════
@@ -36,7 +40,7 @@ namespace Services.Services
                 user.PityCounter++;
                 var (pulledGachaItem, wasPity) = RollSingleItem(gachaItems!, user.PityCounter, banner.HardPityThreshold);
 
-                // ✅ Reset pity khi và chỉ khi ra 5★ (hard pity, soft pity, hay lucky đều reset)
+                // Reset pity khi và chỉ khi ra 5★ (hard pity, soft pity, hay lucky đều reset)
                 if (pulledGachaItem.StarRating == 5)
                     user.PityCounter = 0;
 
@@ -106,7 +110,7 @@ namespace Services.Services
                         (pulledItem, wasPity) = RollSingleItem(gachaItems!, user.PityCounter, banner.HardPityThreshold);
                     }
 
-                    // ✅ Reset pity khi và chỉ khi ra 5★
+                    // Reset pity khi và chỉ khi ra 5★
                     if (pulledItem.StarRating == 5)
                     {
                         user.PityCounter = 0;
@@ -219,7 +223,7 @@ namespace Services.Services
         }
 
         // ════════════════════════════════════════════════════
-        // BANNER INFO
+        // BANNER INFO  (public)
         // ════════════════════════════════════════════════════
         public async Task<ServiceResult<List<GachaBannerDto>>> GetActiveBannersAsync()
         {
@@ -227,6 +231,8 @@ namespace Services.Services
             {
                 var banners = _unitOfWork.GachaBanners
                     .GetQueryable(asNoTracking: true)
+                    .Include(b => b.GachaItems)
+                        .ThenInclude(gi => gi.Item)
                     .Where(b => b.IsActive && b.StartDate <= DateTime.Now && b.EndDate >= DateTime.Now)
                     .ToList();
 
@@ -242,7 +248,12 @@ namespace Services.Services
         {
             try
             {
-                var banner = await _unitOfWork.GachaBanners.FirstOrDefaultAsync(b => b.Id == bannerId);
+                var banner = await _unitOfWork.GachaBanners
+                    .GetQueryable(asNoTracking: true)
+                    .Include(b => b.GachaItems)
+                        .ThenInclude(gi => gi.Item)
+                    .FirstOrDefaultAsync(b => b.Id == bannerId);
+
                 if (banner == null) return Fail<GachaBannerDto>("Banner not found");
 
                 return Ok(MapBannerToDto(banner), "Banner retrieved");
@@ -254,25 +265,81 @@ namespace Services.Services
         }
 
         // ════════════════════════════════════════════════════
-        // ADMIN — BANNER MANAGEMENT
+        // ADMIN — ITEMS AVAILABLE
+        // GET /api/admin/gacha/items-available
+        // ════════════════════════════════════════════════════
+        public async Task<ServiceResult<List<AvailableItemDto>>> GetAvailableItemsAsync(string? search = null)
+        {
+            try
+            {
+                var query = _unitOfWork.Items.GetQueryable(asNoTracking: true);
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    query = query.Where(i => i.Name.Contains(search));
+
+                var items = query
+                    .OrderBy(i => i.Name)
+                    .Select(i => new AvailableItemDto
+                    {
+                        ItemId = i.Id,
+                        Name = i.Name,
+                        ImagePath = i.ImagePath ?? string.Empty,
+                        Type = i.Type ?? string.Empty
+                    })
+                    .ToList();
+
+                return Ok(items, $"{items.Count} item(s) available");
+            }
+            catch (Exception ex)
+            {
+                return Fail<List<AvailableItemDto>>("Error fetching available items", ex.Message);
+            }
+        }
+
+        // ════════════════════════════════════════════════════
+        // ADMIN — CREATE BANNER
+        // POST /api/admin/gacha/banners
         // ════════════════════════════════════════════════════
         public async Task<ServiceResult<GachaBannerDto>> CreateBannerAsync(CreateGachaBannerRequest request)
         {
             try
             {
+                // 1. Validate date range
                 if (request.StartDate >= request.EndDate)
                     return Fail<GachaBannerDto>("EndDate must be after StartDate");
 
-                var totalRate = request.Items.Sum(i => i.DropRate);
-                if (Math.Abs(totalRate - 100.0) > 0.01)
-                    return Fail<GachaBannerDto>($"Total drop rate must equal 100%. Current: {totalRate:F2}%");
+                // 2. Validate total drop rate (chỉ khi có item)
+                if (request.Items.Any())
+                {
+                    var totalRate = request.Items.Sum(i => i.DropRate);
+                    if (Math.Abs(totalRate - 100.0) > 0.01)
+                        return Fail<GachaBannerDto>(
+                            $"Total drop rate must equal 100%. Current: {totalRate:F2}%");
+                }
 
+                // 3. Validate từng ItemId có tồn tại trong DB
+                var invalidItemIds = await ValidateItemIdsExistAsync(
+                    request.Items.Select(i => i.ItemId).ToList());
+
+                if (invalidItemIds.Count > 0)
+                    return Fail<GachaBannerDto>(
+                        $"The following ItemId(s) do not exist in the database: " +
+                        $"{string.Join(", ", invalidItemIds)}");
+
+                // 4. Xử lý ảnh với logic ưu tiên
+                var (bannerImagePath, imageError) = await ResolveBannerImageAsync(
+                    request.ImageFile, request.BannerImagePath, allowEmpty: false);
+
+                if (imageError != null)
+                    return Fail<GachaBannerDto>(imageError);
+
+                // 5. Tạo Banner
                 var banner = new GachaBanner
                 {
                     Id = Guid.NewGuid(),
                     Name = request.Name,
                     Description = request.Description,
-                    BannerImagePath = request.BannerImagePath,
+                    BannerImagePath = bannerImagePath!,
                     CostPerSinglePull = request.CostPerSinglePull,
                     CostPerMultiPull = request.CostPerMultiPull,
                     PityThreshold = request.PityThreshold,
@@ -285,6 +352,7 @@ namespace Services.Services
 
                 await _unitOfWork.GachaBanners.AddAsync(banner);
 
+                // 6. Tạo GachaItem từ Item có sẵn
                 foreach (var itemReq in request.Items)
                 {
                     await _unitOfWork.GachaItems.AddAsync(new GachaItem
@@ -308,17 +376,36 @@ namespace Services.Services
             }
         }
 
+        // ════════════════════════════════════════════════════
+        // ADMIN — UPDATE BANNER
+        // PUT /api/admin/gacha/banners/{bannerId}
+        // ════════════════════════════════════════════════════
         public async Task<ServiceResult<GachaBannerDto>> UpdateBannerAsync(
             Guid bannerId, UpdateGachaBannerRequest request)
         {
             try
             {
-                var banner = await _unitOfWork.GachaBanners.FirstOrDefaultAsync(b => b.Id == bannerId);
+                var banner = await _unitOfWork.GachaBanners
+                    .GetQueryable()
+                    .Include(b => b.GachaItems)
+                        .ThenInclude(gi => gi.Item)
+                    .FirstOrDefaultAsync(b => b.Id == bannerId);
+
                 if (banner == null) return Fail<GachaBannerDto>("Banner not found");
+
+                if (request.StartDate >= request.EndDate)
+                    return Fail<GachaBannerDto>("EndDate must be after StartDate");
+
+                // allowEmpty: true → nếu không cung cấp ảnh mới thì giữ ảnh cũ
+                var (resolvedPath, imageError) = await ResolveBannerImageAsync(
+                    request.ImageFile, request.BannerImagePath, allowEmpty: true);
+
+                if (imageError != null)
+                    return Fail<GachaBannerDto>(imageError);
 
                 banner.Name = request.Name;
                 banner.Description = request.Description;
-                banner.BannerImagePath = request.BannerImagePath;
+                banner.BannerImagePath = resolvedPath ?? banner.BannerImagePath;
                 banner.CostPerSinglePull = request.CostPerSinglePull;
                 banner.CostPerMultiPull = request.CostPerMultiPull;
                 banner.StartDate = request.StartDate;
@@ -326,14 +413,18 @@ namespace Services.Services
 
                 await _unitOfWork.GachaBanners.UpdateAsync(banner);
                 await _unitOfWork.SaveChangesAsync();
-                return Ok(MapBannerToDto(banner), "Banner updated");
+                return Ok(MapBannerToDto(banner), "Banner updated successfully");
             }
             catch (Exception ex)
             {
-                return Fail<GachaBannerDto>("Error", ex.Message);
+                return Fail<GachaBannerDto>("Error updating banner", ex.Message);
             }
         }
 
+        // ════════════════════════════════════════════════════
+        // ADMIN — TOGGLE BANNER
+        // PATCH /api/admin/gacha/banners/{bannerId}/toggle
+        // ════════════════════════════════════════════════════
         public async Task<ServiceResult<bool>> ToggleBannerAsync(Guid bannerId)
         {
             try
@@ -353,6 +444,10 @@ namespace Services.Services
             }
         }
 
+        // ════════════════════════════════════════════════════
+        // ADMIN — ADD ITEM TO BANNER
+        // POST /api/admin/gacha/banners/{bannerId}/items
+        // ════════════════════════════════════════════════════
         public async Task<ServiceResult<bool>> AddItemToBannerAsync(Guid bannerId, AddGachaItemRequest request)
         {
             try
@@ -387,6 +482,7 @@ namespace Services.Services
             }
         }
 
+     
         public async Task<ServiceResult<bool>> RemoveItemFromBannerAsync(Guid bannerId, Guid itemId)
         {
             try
@@ -405,15 +501,7 @@ namespace Services.Services
             }
         }
 
-        // ════════════════════════════════════════════════════
-        // ROLL ALGORITHM
-        // ════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Roll 1 item theo tỷ lệ, có soft pity và hard pity.
-        /// wasPity = true chỉ khi hard pity kích hoạt.
-        /// Việc reset PityCounter dựa vào StarRating == 5 ở caller, không phải wasPity.
-        /// </summary>
+    
         private (GachaItem item, bool wasPity) RollSingleItem(
             List<GachaItem> items, int pityCounter, int hardPityThreshold)
         {
@@ -480,9 +568,7 @@ namespace Services.Services
             }).ToList();
         }
 
-        // ════════════════════════════════════════════════════
-        // HELPERS
-        // ════════════════════════════════════════════════════
+ 
         private async Task<(User? user, GachaBanner? banner, List<GachaItem>? items, string? error)>
             ValidatePullAsync(Guid userId, Guid bannerId)
         {
@@ -573,6 +659,107 @@ namespace Services.Services
                 PullNumber = pullNumber
             };
 
+       
+        private async Task<(string? path, string? error)> ResolveBannerImageAsync(
+            IFormFile? imageFile,
+            string? bannerImagePath,
+            bool allowEmpty = false)
+        {
+            // Ưu tiên 1: File upload
+            if (imageFile is { Length: > 0 })
+            {
+                var savedPath = await SaveBannerImageFileAsync(imageFile);
+                return (savedPath, null);
+            }
+
+            // Ưu tiên 2: Path/URL do admin nhập
+            if (!string.IsNullOrWhiteSpace(bannerImagePath))
+            {
+                var validationError = ValidateBannerImagePath(bannerImagePath);
+                if (validationError != null)
+                    return (null, validationError);
+
+                return (bannerImagePath.Trim(), null);
+            }
+
+            // Ưu tiên 3: Không có gì
+            if (allowEmpty)
+                return (null, null); // caller sẽ giữ ảnh cũ
+
+            return (null,
+                "Banner image is required. " +
+                "Provide either an image file (multipart upload) or a valid image path/URL.");
+        }
+
+        /// <summary>
+        /// Validate path/URL ảnh:
+        ///   - URL tuyệt đối (http/https) → kiểm tra format Uri hợp lệ
+        ///   - Server-relative path (/images/...) → kiểm tra file tồn tại trong wwwroot
+        /// </summary>
+        private string? ValidateBannerImagePath(string path)
+        {
+            var trimmed = path.Trim();
+
+            // URL tuyệt đối
+            if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!Uri.TryCreate(trimmed, UriKind.Absolute, out _))
+                    return $"Invalid image URL: '{trimmed}'";
+
+                return null;
+            }
+
+            // Server-relative path (ví dụ: /images/banners/abc.png)
+            if (trimmed.StartsWith('/'))
+            {
+                var webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+                var relativePart = trimmed.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var fullPath = Path.Combine(webRootPath, relativePart);
+
+                if (!File.Exists(fullPath))
+                    return $"Image path does not exist on server: '{trimmed}'";
+
+                return null;
+            }
+
+            return $"Invalid image path: '{trimmed}'. " +
+                   "Must be an absolute URL (https://...) or a server-relative path (/images/...).";
+        }
+
+        /// <summary>Lưu file upload vào wwwroot/images/banners/ và trả về server-relative path.</summary>
+        private async Task<string> SaveBannerImageFileAsync(IFormFile imageFile)
+        {
+            var webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+            var uploadsFolder = Path.Combine(webRootPath, "images", "banners");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(imageFile.FileName)}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            await using var fileStream = new FileStream(filePath, FileMode.Create);
+            await imageFile.CopyToAsync(fileStream);
+
+            return $"/images/banners/{uniqueFileName}";
+        }
+
+      
+        private async Task<List<Guid>> ValidateItemIdsExistAsync(List<Guid> itemIds)
+        {
+            if (itemIds.Count == 0) return [];
+
+            var existingIds = _unitOfWork.Items
+                .GetQueryable(asNoTracking: true)
+                .Where(i => itemIds.Contains(i.Id))
+                .Select(i => i.Id)
+                .ToHashSet();
+
+            return itemIds.Where(id => !existingIds.Contains(id)).ToList();
+        }
+
+    
         private static GachaBannerDto MapBannerToDto(GachaBanner b) => new()
         {
             Id = b.Id,
@@ -610,6 +797,7 @@ namespace Services.Services
             }).ToList()
         };
 
+       
         private static ServiceResult<T> Ok<T>(T data, string msg) =>
             new() { Success = true, Message = msg, Data = data };
 

@@ -16,6 +16,9 @@ namespace Services.IServices
         Task<ServiceResult<bool>> ToggleBannerAsync(Guid bannerId);
         Task<ServiceResult<bool>> AddItemToBannerAsync(Guid bannerId, AddGachaItemRequest request);
         Task<ServiceResult<bool>> RemoveItemFromBannerAsync(Guid bannerId, Guid itemId);
+       
+
+        Task<ServiceResult<List<AvailableItemDto>>> GetAvailableItemsAsync(string? search = null);
     }
 }
 
