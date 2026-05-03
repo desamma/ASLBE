@@ -1,3 +1,4 @@
+using BussinessObjects.DTOs.Auth;
 using BussinessObjects.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -182,6 +183,74 @@ namespace Services.Services
                     CurrencyAmount = user.CurrencyAmount,
                     Gender = user.Gender
                 }
+            };
+        }
+
+        public async Task<AuthServiceResult> ForgotPasswordAsync(string email, string baseUrl)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return new AuthServiceResult
+                {
+                    Success = false,
+                    Message = "Email is required"
+                };
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return new AuthServiceResult
+                {
+                    Success = false,
+                    Message = "If this email exists in our system, you will receive a password reset link"
+                };
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetLink = $"{baseUrl}/Auth/ResetPassword?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+
+            var emailBody = $"Please reset your password by clicking this link: <a href='{resetLink}'>Reset Password</a><br/>" +
+                           $"This link will expire in 24 hours.<br/>" +
+                           $"If you did not request a password reset, please ignore this email.";
+
+            await _emailSender.SendEmailAsync(user.Email, "Reset your password", emailBody);
+
+            return new AuthServiceResult
+            {
+                Success = true,
+                Message = "If this email exists in our system, you will receive a password reset link"
+            };
+        }
+
+        public async Task<AuthServiceResult> ResetPasswordAsync(Guid userId, string token, string newPassword)
+        {
+            if (userId == Guid.Empty || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(newPassword))
+                return new AuthServiceResult
+                {
+                    Success = false,
+                    Message = "Invalid password reset request"
+                };
+
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return new AuthServiceResult
+                {
+                    Success = false,
+                    Message = "User not found"
+                };
+
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+            if (!result.Succeeded)
+            {
+                return new AuthServiceResult
+                {
+                    Success = false,
+                    Message = "Password reset failed",
+                    Errors = result.Errors.Select(e => e.Description)
+                };
+            }
+
+            return new AuthServiceResult
+            {
+                Success = true,
+                Message = "Password reset successfully. You can now login with your new password."
             };
         }
 

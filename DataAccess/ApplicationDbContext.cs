@@ -21,6 +21,10 @@ namespace DataAccess
         public virtual DbSet<ShopItem> ShopItems { get; set; }
         public virtual DbSet<ShopPurchase> ShopPurchases { get; set; }
         public virtual DbSet<NPC> NPCs { get; set; }
+        public virtual DbSet<BugReport> BugReports { get; set; }
+
+        // THÊM BẢNG LƯU SETTING API
+        public virtual DbSet<ApiSetting> ApiSettings { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -31,7 +35,7 @@ namespace DataAccess
         {
             base.OnModelCreating(modelBuilder);
 
-            //Unique Constrains
+            // Unique Constraints
             modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
             modelBuilder.Entity<User>().HasIndex(u => u.UserName).IsUnique();
             modelBuilder.Entity<Item>().HasIndex(i => i.Name).IsUnique();
@@ -39,7 +43,7 @@ namespace DataAccess
             modelBuilder.Entity<GameNews>().HasIndex(gn => gn.Title).IsUnique();
             modelBuilder.Entity<NPC>().HasIndex(n => n.Name).IsUnique();
 
-            //Primary keys
+            // Primary keys
             modelBuilder.Entity<Item>().HasKey(i => i.Id);
             modelBuilder.Entity<Transaction>().HasKey(t => t.Id);
             modelBuilder.Entity<UserItem>().HasKey(ui => new { ui.UserId, ui.ItemId });
@@ -51,27 +55,31 @@ namespace DataAccess
             modelBuilder.Entity<ShopPurchase>().HasKey(sp => sp.Id);
             modelBuilder.Entity<NPC>().HasKey(n => n.Id);
 
-            //Table names
+            // Khóa chính cho bảng ApiSetting
+            modelBuilder.Entity<ApiSetting>().HasKey(a => a.Id);
+
+            // Table names
             modelBuilder.Entity<GachaBanner>().ToTable("GachaBanner");
             modelBuilder.Entity<GachaItem>().ToTable("GachaItem");
             modelBuilder.Entity<GachaHistory>().ToTable("GachaHistory");
+            modelBuilder.Entity<ApiSetting>().ToTable("ApiSetting");
 
-            //Relationships
-            //User - UserItem
+            // Relationships
+            // User - UserItem
             modelBuilder.Entity<UserItem>()
                 .HasOne(ui => ui.User)
                 .WithMany(u => u.UserItems)
                 .HasForeignKey(ui => ui.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
-            
-            //User - Transaction
+
+            // User - Transaction
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.User)
                 .WithMany(u => u.Transactions)
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //Item - UserItem
+            // Item - UserItem
             modelBuilder.Entity<UserItem>()
                 .HasOne(ui => ui.Item)
                 .WithMany(i => i.UserItems)
@@ -85,7 +93,7 @@ namespace DataAccess
                 .HasForeignKey(gi => gi.GachaBannerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Item - GachaItem (chỉ 1 relationship)
+            // Item - GachaItem
             modelBuilder.Entity<GachaItem>()
                 .HasOne(gi => gi.Item)
                 .WithMany()
@@ -94,8 +102,8 @@ namespace DataAccess
 
             // User - GachaHistory
             modelBuilder.Entity<GachaHistory>()
-                .HasOne<User>()
-                .WithMany()
+                .HasOne(gh => gh.User)
+                .WithMany(u => u.GachaHistories)
                 .HasForeignKey(gh => gh.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -113,26 +121,33 @@ namespace DataAccess
                 .HasForeignKey(gh => gh.ItemId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            //User - ShopPurchase
+            // User - ShopPurchase
             modelBuilder.Entity<ShopPurchase>()
                 .HasOne(sp => sp.User)
                 .WithMany(u => u.ShopPurchases)
                 .HasForeignKey(sp => sp.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //ShopItem - ShopPurchase
+            // ShopItem - ShopPurchase
             modelBuilder.Entity<ShopPurchase>()
                 .HasOne(sp => sp.ShopItem)
                 .WithMany(si => si.ShopPurchases)
                 .HasForeignKey(sp => sp.ShopItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //Item - ShopItem
+            // Item - ShopItem
             modelBuilder.Entity<ShopItem>()
                 .HasOne(si => si.Item)
                 .WithMany()
                 .HasForeignKey(si => si.ItemId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            //User - BugReport
+            modelBuilder.Entity<BugReport>()
+                .HasOne(br => br.User)
+                .WithMany()
+                .HasForeignKey(br => br.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
            
 
@@ -140,7 +155,6 @@ namespace DataAccess
                 .Property(u => u.CurrencyAmount)
                 .HasColumnType("decimal(18,2)");
 
-            //Column types for ShopItem and ShopPurchase
             modelBuilder.Entity<ShopItem>()
                 .Property(si => si.Price)
                 .HasColumnType("decimal(18,2)");

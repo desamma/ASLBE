@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IUserItemRepository UserItems { get; }
     public IShopItemRepository ShopItems { get; }
     public INPCRepository NPCs { get; }
+    public IGenericRepository<BugReport> BugReports { get; }
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -37,6 +38,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         GachaBanners = new GenericRepository<GachaBanner>(_context);
         GachaItems = new GenericRepository<GachaItem>(_context);
         GachaHistory = new GenericRepository<GachaHistory>(_context);
+        BugReports = new GenericRepository<BugReport>(_context);
     }
 
     public async Task SaveChangesAsync()

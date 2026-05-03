@@ -1,3 +1,4 @@
+using BussinessObjects.DTOs.ShopItem;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.IServices;
