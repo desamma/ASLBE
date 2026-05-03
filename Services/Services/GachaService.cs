@@ -223,9 +223,35 @@ namespace Services.Services
         }
 
         // ════════════════════════════════════════════════════
-        // BANNER INFO  (public)
+        // BANNER INFO  (public) — chỉ banner đang active + trong hạn
         // ════════════════════════════════════════════════════
         public async Task<ServiceResult<List<GachaBannerDto>>> GetActiveBannersAsync()
+        {
+            try
+            {
+                var now = DateTime.Now;
+                var banners = _unitOfWork.GachaBanners
+                    .GetQueryable(asNoTracking: true)
+                    .Include(b => b.GachaItems)
+                        .ThenInclude(gi => gi.Item)
+                    .Where(b => b.IsActive && b.StartDate <= now && b.EndDate >= now)
+                    .OrderByDescending(b => b.CreatedDate)
+                    .ToList();
+
+                return Ok(banners.Select(MapBannerToDto).ToList(),
+                    $"{banners.Count} active banner(s) retrieved");
+            }
+            catch (Exception ex)
+            {
+                return Fail<List<GachaBannerDto>>("Error", ex.Message);
+            }
+        }
+
+        // ════════════════════════════════════════════════════
+        // BANNER INFO  (admin) — TẤT CẢ banner, không filter
+        // GET /api/admin/gacha/banners
+        // ════════════════════════════════════════════════════
+        public async Task<ServiceResult<List<GachaBannerDto>>> GetAllBannersForAdminAsync()
         {
             try
             {
@@ -233,10 +259,13 @@ namespace Services.Services
                     .GetQueryable(asNoTracking: true)
                     .Include(b => b.GachaItems)
                         .ThenInclude(gi => gi.Item)
-                    .Where(b => b.IsActive && b.StartDate <= DateTime.Now && b.EndDate >= DateTime.Now)
+                    // Không filter IsActive / StartDate / EndDate
+                    // Admin phải thấy toàn bộ: active, inactive, hết hạn, chưa bắt đầu
+                    .OrderByDescending(b => b.CreatedDate)
                     .ToList();
 
-                return Ok(banners.Select(MapBannerToDto).ToList(), "Active banners retrieved");
+                return Ok(banners.Select(MapBannerToDto).ToList(),
+                    $"{banners.Count} banner(s) retrieved");
             }
             catch (Exception ex)
             {
@@ -482,7 +511,10 @@ namespace Services.Services
             }
         }
 
-     
+        // ════════════════════════════════════════════════════
+        // ADMIN — REMOVE ITEM FROM BANNER
+        // DELETE /api/admin/gacha/banners/{bannerId}/items/{itemId}
+        // ════════════════════════════════════════════════════
         public async Task<ServiceResult<bool>> RemoveItemFromBannerAsync(Guid bannerId, Guid itemId)
         {
             try
@@ -501,7 +533,15 @@ namespace Services.Services
             }
         }
 
-    
+        // ════════════════════════════════════════════════════
+        // ROLL ALGORITHM  —  GIỮ NGUYÊN
+        // ════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Roll 1 item theo tỷ lệ, có soft pity và hard pity.
+        /// wasPity = true chỉ khi hard pity kích hoạt.
+        /// Việc reset PityCounter dựa vào StarRating == 5 ở caller, không phải wasPity.
+        /// </summary>
         private (GachaItem item, bool wasPity) RollSingleItem(
             List<GachaItem> items, int pityCounter, int hardPityThreshold)
         {
@@ -568,7 +608,9 @@ namespace Services.Services
             }).ToList();
         }
 
- 
+        // ════════════════════════════════════════════════════
+        // PRIVATE HELPERS — Pull
+        // ════════════════════════════════════════════════════
         private async Task<(User? user, GachaBanner? banner, List<GachaItem>? items, string? error)>
             ValidatePullAsync(Guid userId, Guid bannerId)
         {
@@ -659,7 +701,18 @@ namespace Services.Services
                 PullNumber = pullNumber
             };
 
-       
+        // ════════════════════════════════════════════════════
+        // PRIVATE HELPERS — Banner Image
+        // ════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Resolve ảnh banner theo thứ tự ưu tiên:
+        ///   1. ImageFile  → upload file, lưu vào wwwroot/images/banners/, trả path
+        ///   2. BannerImagePath → validate URL/server path rồi dùng trực tiếp
+        ///   3. Cả hai null/empty:
+        ///      - allowEmpty = false → trả lỗi (bắt buộc khi Create)
+        ///      - allowEmpty = true  → trả (null, null), caller giữ ảnh cũ (dùng khi Update)
+        /// </summary>
         private async Task<(string? path, string? error)> ResolveBannerImageAsync(
             IFormFile? imageFile,
             string? bannerImagePath,
@@ -745,7 +798,14 @@ namespace Services.Services
             return $"/images/banners/{uniqueFileName}";
         }
 
-      
+        // ════════════════════════════════════════════════════
+        // PRIVATE HELPERS — Admin Item Validation
+        // ════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Bulk-check danh sách ItemId có tồn tại trong DB không (1 query duy nhất).
+        /// Trả về list các ID không hợp lệ — empty list nghĩa là tất cả hợp lệ.
+        /// </summary>
         private async Task<List<Guid>> ValidateItemIdsExistAsync(List<Guid> itemIds)
         {
             if (itemIds.Count == 0) return [];
@@ -759,7 +819,9 @@ namespace Services.Services
             return itemIds.Where(id => !existingIds.Contains(id)).ToList();
         }
 
-    
+        // ════════════════════════════════════════════════════
+        // PRIVATE HELPERS — Mapping
+        // ════════════════════════════════════════════════════
         private static GachaBannerDto MapBannerToDto(GachaBanner b) => new()
         {
             Id = b.Id,
@@ -797,7 +859,9 @@ namespace Services.Services
             }).ToList()
         };
 
-       
+        // ════════════════════════════════════════════════════
+        // PRIVATE HELPERS — ServiceResult factory
+        // ════════════════════════════════════════════════════
         private static ServiceResult<T> Ok<T>(T data, string msg) =>
             new() { Success = true, Message = msg, Data = data };
 

@@ -110,12 +110,13 @@ namespace BE.Controllers
 
         /// <summary>
         /// GET /api/admin/gacha/banners
-        /// Danh sách tất cả banner (kể cả inactive) dành cho admin quản lý.
+        /// Danh sách TẤT CẢ banner — không filter IsActive hay date.
+        /// Dùng riêng cho admin, khác với public endpoint.
         /// </summary>
         [HttpGet("gacha/banners")]
         public async Task<IActionResult> GetAllBanners()
         {
-            var result = await _gachaService.GetActiveBannersAsync();
+            var result = await _gachaService.GetAllBannersForAdminAsync();
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
