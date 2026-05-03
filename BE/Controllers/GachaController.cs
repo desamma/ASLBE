@@ -94,7 +94,7 @@ namespace BE.Controllers
 
         [HttpPost("banners")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> CreateBanner([FromBody] CreateGachaBannerRequest request)
+        public async Task<IActionResult> CreateBanner([FromForm] CreateGachaBannerRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _gachaService.CreateBannerAsync(request);
@@ -104,7 +104,7 @@ namespace BE.Controllers
 
         [HttpPut("banners/{bannerId}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> UpdateBanner(Guid bannerId, [FromBody] UpdateGachaBannerRequest request)
+        public async Task<IActionResult> UpdateBanner(Guid bannerId, [FromForm] UpdateGachaBannerRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _gachaService.UpdateBannerAsync(bannerId, request);
