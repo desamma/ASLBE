@@ -12,7 +12,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IGenericRepository<GameNews> GameNews { get; }
     public IGenericRepository<ShopPurchase> ShopPurchases { get; }
 
-   
+
     public IGenericRepository<GachaBanner> GachaBanners { get; }
     public IGenericRepository<GachaItem> GachaItems { get; }
     public IGenericRepository<GachaHistory> GachaHistory { get; }
@@ -21,6 +21,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IShopItemRepository ShopItems { get; }
     public INPCRepository NPCs { get; }
     public IGenericRepository<BugReport> BugReports { get; }
+    public IGenericRepository<ApiSetting> ApiSettings { get; }
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -39,6 +40,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         GachaItems = new GenericRepository<GachaItem>(_context);
         GachaHistory = new GenericRepository<GachaHistory>(_context);
         BugReports = new GenericRepository<BugReport>(_context);
+        ApiSettings = new GenericRepository<ApiSetting>(_context);
     }
 
     public async Task SaveChangesAsync()

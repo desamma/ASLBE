@@ -2,6 +2,7 @@ using BussinessObjects.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.IServices;
+using Services.Services;
 
 namespace BE.Controllers
 {
@@ -61,6 +62,13 @@ namespace BE.Controllers
                 return BadRequest(new { message = result.Message });
 
             return Ok(new { message = result.Message });
+        }
+
+        [HttpGet("settings/api-keys")]
+        public async Task<IActionResult> GetApiSettings()
+        {
+            var result = await _userService.GetApiSettingsAsync();
+            return result.Success ? Ok(result) : BadRequest(result);
         }
     }
 }

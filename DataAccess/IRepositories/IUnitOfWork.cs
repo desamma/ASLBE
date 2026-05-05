@@ -14,10 +14,11 @@ namespace DataAccess.IRepositories
         IGenericRepository<GachaHistory> GachaHistory { get; }
         IGenericRepository<ShopPurchase> ShopPurchases { get; }
         IGenericRepository<BugReport> BugReports { get; }
+        IGenericRepository<ApiSetting> ApiSettings { get; }
         IUserItemRepository UserItems { get; }
         IShopItemRepository ShopItems { get; }
         INPCRepository NPCs { get; }
-        
+
         Task SaveChangesAsync();
     }
 }

@@ -3,6 +3,7 @@ using DataAccess.IRepositories;
 using Services.IServices;
 using Microsoft.AspNetCore.Identity;
 using BussinessObjects.DTOs.User;
+using BussinessObjects.DTOs.Admin;
 
 namespace Services.Services
 {
@@ -245,6 +246,40 @@ namespace Services.Services
                 {
                     Success = false,
                     Message = "Error disabling user",
+                    Errors = [ex.Message]
+                };
+            }
+        }
+
+        public async Task<ServiceResult<List<ApiSettingDto>>> GetApiSettingsAsync()
+        {
+            try
+            {
+                var settings = _unitOfWork.ApiSettings.GetQueryable(asNoTracking: true).ToList();
+
+                var dtoList = settings
+                    .OrderByDescending(s => s.UpdatedAt)
+                    .Select(s => new ApiSettingDto
+                    {
+                        Id = s.Id,
+                        GeminiApiKey = s.GeminiApiKey,
+                        ColabApiUrl = s.ColabApiUrl,
+                        UpdatedAt = s.UpdatedAt
+                    }).ToList();
+
+                return new ServiceResult<List<ApiSettingDto>>
+                {
+                    Success = true,
+                    Message = "API settings retrieved successfully",
+                    Data = dtoList
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResult<List<ApiSettingDto>>
+                {
+                    Success = false,
+                    Message = "Error retrieving API settings",
                     Errors = [ex.Message]
                 };
             }
