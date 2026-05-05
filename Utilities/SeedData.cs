@@ -49,6 +49,7 @@ namespace Utilities
             {
                 userUser = new User
                 {
+                    Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                     UserName = "User",
                     Email = userEmail,
                     EmailConfirmed = true,

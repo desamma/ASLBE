@@ -1,3 +1,4 @@
+using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Configuration;
 using Services.IServices;
@@ -13,18 +14,33 @@ public class FirebaseStorageService : IFirebaseStorageService
     private readonly string _bucketName;
     private readonly IConfiguration _configuration;
 
+    //public FirebaseStorageService(IConfiguration configuration)
+    //{
+    //    _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        
+    //    // Get bucket name from configuration
+    //    _bucketName = _configuration["Firebase:StorageBucket"] 
+    //        ?? throw new InvalidOperationException("Firebase:StorageBucket configuration is missing");
+
+    //    // Initialize Google Cloud Storage client
+    //    // Note: Ensure GOOGLE_APPLICATION_CREDENTIALS environment variable is set
+    //    // or credentials file path is configured
+    //    _storageClient = StorageClient.Create();
+    //}
+
     public FirebaseStorageService(IConfiguration configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        
-        // Get bucket name from configuration
-        _bucketName = _configuration["Firebase:StorageBucket"] 
+
+        _bucketName = _configuration["Firebase:StorageBucket"]
             ?? throw new InvalidOperationException("Firebase:StorageBucket configuration is missing");
 
-        // Initialize Google Cloud Storage client
-        // Note: Ensure GOOGLE_APPLICATION_CREDENTIALS environment variable is set
-        // or credentials file path is configured
-        _storageClient = StorageClient.Create();
+        var firebaseJson = _configuration["FIREBASE_CREDENTIALS_JSON"]
+            ?? throw new InvalidOperationException("FIREBASE_CREDENTIALS_JSON configuration is missing.");
+
+        var credential = GoogleCredential.FromJson(firebaseJson);
+
+        _storageClient = StorageClient.Create(credential);
     }
 
     /// <summary>

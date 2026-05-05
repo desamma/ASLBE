@@ -53,13 +53,20 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 
 //Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", null);
 
-var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON")
-    ?? throw new InvalidOperationException("FIREBASE_CREDENTIALS_JSON is not set.");
+// Read the JSON from Azure App Settings
+var firebaseJson = builder.Configuration["FIREBASE_CREDENTIALS_JSON"]
+    ?? throw new InvalidOperationException("FIREBASE_CREDENTIALS_JSON is not set in configuration.");
 
+// Create the Google Credential object
+var googleCredential = GoogleCredential.FromJson(firebaseJson);
+
+// Initialize Firebase Admin (for Auth/Messaging)
 FirebaseApp.Create(new AppOptions
 {
-    Credential = GoogleCredential.FromJson(firebaseJson)
+    Credential = googleCredential
 });
+
+//builder.Services.AddSingleton(googleCredential);
 
 builder.Services.AddSingleton<PayOSClient>(sp =>
 {
@@ -257,9 +264,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseSwagger();
-app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
