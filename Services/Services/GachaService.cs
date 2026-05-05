@@ -13,11 +13,13 @@ namespace Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly Random _rng = new();
         private readonly IWebHostEnvironment _env;
+        private readonly IFirebaseStorageService _firebaseStorage;
 
-        public GachaService(IUnitOfWork unitOfWork, IWebHostEnvironment env)
+        public GachaService(IUnitOfWork unitOfWork, IWebHostEnvironment env, IFirebaseStorageService firebaseStorage)
         {
             _unitOfWork = unitOfWork;
             _env = env;
+            _firebaseStorage = firebaseStorage;
         }
 
         // ════════════════════════════════════════════════════
@@ -702,13 +704,13 @@ namespace Services.Services
             };
 
         // ════════════════════════════════════════════════════
-        // PRIVATE HELPERS — Banner Image
+        // PRIVATE HELPERS — Banner Image (Firebase Storage)
         // ════════════════════════════════════════════════════
 
         /// <summary>
         /// Resolve ảnh banner theo thứ tự ưu tiên:
-        ///   1. ImageFile  → upload file, lưu vào wwwroot/images/banners/, trả path
-        ///   2. BannerImagePath → validate URL/server path rồi dùng trực tiếp
+        ///   1. ImageFile  → upload lên Firebase Storage, trả về public URL
+        ///   2. BannerImagePath → validate URL rồi dùng trực tiếp
         ///   3. Cả hai null/empty:
         ///      - allowEmpty = false → trả lỗi (bắt buộc khi Create)
         ///      - allowEmpty = true  → trả (null, null), caller giữ ảnh cũ (dùng khi Update)
@@ -718,14 +720,21 @@ namespace Services.Services
             string? bannerImagePath,
             bool allowEmpty = false)
         {
-            // Ưu tiên 1: File upload
+            // Ưu tiên 1: File upload → đẩy lên Firebase Storage
             if (imageFile is { Length: > 0 })
             {
-                var savedPath = await SaveBannerImageFileAsync(imageFile);
-                return (savedPath, null);
+                try
+                {
+                    var publicUrl = await SaveBannerImageFileAsync(imageFile);
+                    return (publicUrl, null);
+                }
+                catch (Exception ex)
+                {
+                    return (null, $"Failed to upload image to Firebase Storage: {ex.Message}");
+                }
             }
 
-            // Ưu tiên 2: Path/URL do admin nhập
+            // Ưu tiên 2: Path/URL do admin nhập thủ công
             if (!string.IsNullOrWhiteSpace(bannerImagePath))
             {
                 var validationError = ValidateBannerImagePath(bannerImagePath);
@@ -741,19 +750,37 @@ namespace Services.Services
 
             return (null,
                 "Banner image is required. " +
-                "Provide either an image file (multipart upload) or a valid image path/URL.");
+                "Provide either an image file (multipart upload) or a valid image URL (https://...).");
         }
 
         /// <summary>
-        /// Validate path/URL ảnh:
-        ///   - URL tuyệt đối (http/https) → kiểm tra format Uri hợp lệ
-        ///   - Server-relative path (/images/...) → kiểm tra file tồn tại trong wwwroot
+        /// Upload file ảnh lên Firebase Storage và trả về public URL.
+        /// KHÔNG lưu vào local disk — tránh lỗi 404 trên Azure App Service (ephemeral filesystem).
         /// </summary>
-        private string? ValidateBannerImagePath(string path)
+        private async Task<string> SaveBannerImageFileAsync(IFormFile imageFile)
+        {
+            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(imageFile.FileName)}";
+
+            await using var stream = imageFile.OpenReadStream();
+
+            // Upload lên Firebase Storage vào folder "banners"
+            // Trả về URL dạng: https://firebasestorage.googleapis.com/v0/b/.../o/banners%2F{fileName}?alt=media
+            var publicUrl = await _firebaseStorage.UploadFileAsync(
+                stream,
+                uniqueFileName,
+                folderPath: "banners");
+
+            return publicUrl;
+        }
+
+        /// <summary>
+        /// Validate URL ảnh do admin nhập tay.
+        /// Chỉ chấp nhận absolute URL (http/https) — không còn hỗ trợ server-relative path.
+        /// </summary>
+        private static string? ValidateBannerImagePath(string path)
         {
             var trimmed = path.Trim();
 
-            // URL tuyệt đối
             if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
@@ -763,39 +790,9 @@ namespace Services.Services
                 return null;
             }
 
-            // Server-relative path (ví dụ: /images/banners/abc.png)
-            if (trimmed.StartsWith('/'))
-            {
-                var webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-                var relativePart = trimmed.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                var fullPath = Path.Combine(webRootPath, relativePart);
-
-                if (!File.Exists(fullPath))
-                    return $"Image path does not exist on server: '{trimmed}'";
-
-                return null;
-            }
-
             return $"Invalid image path: '{trimmed}'. " +
-                   "Must be an absolute URL (https://...) or a server-relative path (/images/...).";
-        }
-
-        /// <summary>Lưu file upload vào wwwroot/images/banners/ và trả về server-relative path.</summary>
-        private async Task<string> SaveBannerImageFileAsync(IFormFile imageFile)
-        {
-            var webRootPath = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-            var uploadsFolder = Path.Combine(webRootPath, "images", "banners");
-
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(imageFile.FileName)}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            await using var fileStream = new FileStream(filePath, FileMode.Create);
-            await imageFile.CopyToAsync(fileStream);
-
-            return $"/images/banners/{uniqueFileName}";
+                   "Must be an absolute URL (https://...). " +
+                   "Tip: Upload the image file directly instead of providing a path.";
         }
 
         // ════════════════════════════════════════════════════
